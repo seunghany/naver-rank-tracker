@@ -1,0 +1,36 @@
+# 블로그 검색은 100개씩 페이지를 넘기며 확인한다.
+# blog_pages: 3 이면 최대 300위까지 확인 (API가 거부하면 자동으로 멈춤)
+blog_page_size: 100
+blog_pages: 3
+
+centers:
+  - name: Reboot
+    label: 리부트(철산)
+    # 지역검색 결과의 업체명이 이 중 하나와 일치하면 '우리'로 판정
+    place_aliases:
+      - 리부트 팀트레이닝
+      - 리부트팀트레이닝
+      - 리부트
+    # blog.naver.com/<여기> 의 아이디. 실제 값으로 반드시 교체할 것
+    blog_ids:
+      - reboot.teamtraining
+    keywords:
+      - 철산크로스핏
+      - 철산하이록스
+      - 광명헬스장
+      - 철산PT
+
+  - name: TeamPoise
+    label: 팀포이즈(광교)
+    place_aliases:
+      - 팀포이즈
+      - 팀 포이즈
+      - Team Poise
+      - 팀포이즈 광교
+    blog_ids:
+      - teampoise
+    keywords:
+      - 광교크로스핏
+      - 상현헬스장
+      - 광교PT
+      - 광교그룹운동

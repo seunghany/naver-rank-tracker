@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>네이버 노출 추적</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0:#f6f6f4; --surface-1:#fcfcfb; --border:#e3e2dd;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#8a8981;
+    --grid:#eceae5;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-0:#111110; --surface-1:#1a1a19; --border:#33332f;
+      --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
+      --grid:#2a2a27;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0:#111110; --surface-1:#1a1a19; --border:#33332f;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
+    --grid:#2a2a27;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; padding:28px 16px 72px;
+    background:var(--surface-0); color:var(--text-primary);
+    font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1060px; margin:0 auto; }
+  h1 { font-size:1.35rem; margin:0 0 5px; letter-spacing:-0.015em; }
+  .sub { color:var(--text-secondary); font-size:.82rem; margin:0 0 30px; line-height:1.5; }
+  h2 { font-size:.78rem; margin:34px 0 12px; letter-spacing:.06em;
+       text-transform:uppercase; color:var(--text-secondary); font-weight:600; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:9px; }
+  .tile { background:var(--surface-1); border:1px solid var(--border);
+          border-radius:10px; padding:11px 13px; }
+  .tile .k { font-size:.72rem; color:var(--text-secondary); margin-bottom:5px;
+             white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile .v { font-size:1.45rem; font-weight:650; letter-spacing:-0.025em; line-height:1.1; }
+  .tile .d { font-size:.7rem; color:var(--text-muted); margin-top:3px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:16px; }
+  .card { background:var(--surface-1); border:1px solid var(--border);
+          border-radius:12px; padding:16px 16px 12px; }
+  .card h3 { margin:0 0 3px; font-size:.9rem; letter-spacing:-0.01em; }
+  .card p { margin:0 0 6px; font-size:.73rem; color:var(--text-muted); line-height:1.45; }
+  .card svg { display:block; width:100%; height:auto; overflow:visible; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:8px;
+            font-size:.73rem; color:var(--text-secondary); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  table { width:100%; border-collapse:collapse; font-size:.78rem; margin:6px 0 22px; }
+  caption { text-align:left; font-size:.8rem; font-weight:600; padding:10px 0 6px; }
+  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--text-secondary); font-weight:550; font-size:.72rem; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px;
+        vertical-align:baseline; }
+  details { margin-top:18px; }
+  summary { cursor:pointer; font-size:.8rem; color:var(--text-secondary); padding:6px 0; }
+  .miss { color:var(--text-muted); }
+  #tip { position:fixed; pointer-events:none; opacity:0; transition:opacity .1s;
+         background:var(--surface-0); border:1px solid var(--border); border-radius:8px;
+         padding:8px 10px; font-size:.75rem; color:var(--text-secondary);
+         box-shadow:0 4px 16px rgba(0,0,0,.14); z-index:9; max-width:230px; }
+  #tip b { color:var(--text-primary); display:block; margin-bottom:4px; font-size:.76rem; }
+  #tip div { display:flex; align-items:center; gap:6px; line-height:1.55; }
+  #tip i { width:8px; height:8px; border-radius:2px; flex:none; }
+  @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>네이버 노출 추적</h1>
+  <p class="sub">2026-09-18 기준 · 플레이스는 지역검색 API가 상위 5위까지만 주므로 그 밖은 측정 불가 · 블로그는 최대 300위까지 확인</p>
+
+  <h2>오늘 상태</h2>
+  <div class="tiles" id="tiles"></div>
+
+  <h2>추이</h2>
+  <div class="grid" id="charts"></div>
+
+  <details open>
+    <summary>표로 보기</summary>
+    <div id="tables"></div>
+  </details>
+</div>
+<div id="tip"></div>
+
+<script>
+const DATA = {"dates": ["2026-09-18"], "panels": [{"title": "리부트(철산) · 플레이스", "note": "지역검색 상위 5위 안에서의 위치. 5위 밖은 끊어져 보인다.", "max": 5, "series": [{"name": "철산크로스핏", "values": [3]}, {"name": "철산하이록스", "values": [3]}, {"name": "광명헬스장", "values": [null]}, {"name": "철산PT", "values": [null]}]}, {"title": "리부트(철산) · 블로그", "note": "블로그 검색에서 우리 글의 실제 순위. 최대 300위까지 확인.", "max": 10, "series": [{"name": "철산크로스핏", "values": [null]}, {"name": "철산하이록스", "values": [null]}, {"name": "광명헬스장", "values": [null]}, {"name": "철산PT", "values": [null]}]}, {"title": "팀포이즈(광교) · 플레이스", "note": "지역검색 상위 5위 안에서의 위치. 5위 밖은 끊어져 보인다.", "max": 5, "series": [{"name": "광교크로스핏", "values": [null]}, {"name": "상현헬스장", "values": [null]}, {"name": "광교PT", "values": [null]}, {"name": "광교그룹운동", "values": [null]}]}, {"title": "팀포이즈(광교) · 블로그", "note": "블로그 검색에서 우리 글의 실제 순위. 최대 300위까지 확인.", "max": 10, "series": [{"name": "광교크로스핏", "values": [null]}, {"name": "상현헬스장", "values": [null]}, {"name": "광교PT", "values": [null]}, {"name": "광교그룹운동", "values": [null]}]}], "today": [{"center": "리부트(철산)", "label": "철산크로스핏", "surface": "place", "surfaceLabel": "플레이스", "rank": 3, "delta": null}, {"center": "리부트(철산)", "label": "철산하이록스", "surface": "place", "surfaceLabel": "플레이스", "rank": 3, "delta": null}, {"center": "리부트(철산)", "label": "광명헬스장", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산PT", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산크로스핏", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산하이록스", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명헬스장", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산PT", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교크로스핏", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "상현헬스장", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교PT", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교그룹운동", "surface": "place", "surfaceLabel": "플레이스", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교크로스핏", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "상현헬스장", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교PT", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교그룹운동", "surface": "blog", "surfaceLabel": "블로그", "rank": null, "delta": null}], "hasPrev": false};
+const SLOTS = ['--s1','--s2','--s3','--s4'];
+const hue = i => getComputedStyle(document.documentElement).getPropertyValue(SLOTS[i % 4]).trim();
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- 오늘 상태 타일 ---------- */
+document.getElementById('tiles').innerHTML = DATA.today.map(t => {
+  const note = t.rank
+    ? (t.delta === null ? (DATA.hasPrev ? '신규 진입' : '첫 측정')
+       : t.delta === 0 ? '변동 없음'
+       : t.delta > 0 ? `▲ ${t.delta}계단` : `▼ ${-t.delta}계단`)
+    : (t.surface === 'place' ? '상위 5위 밖' : '미노출');
+  return `<div class="tile">
+            <div class="k">${esc(t.label)} · ${esc(t.surfaceLabel)}</div>
+            <div class="v">${t.rank ? t.rank + '위' : '—'}</div>
+            <div class="d">${note}</div>
+          </div>`;
+}).join('');
+
+/* ---------- SVG 라인 차트 ---------- */
+const W = 660, H = 250, PL = 46, PR = 104, PT = 14, PB = 40;
+const plotW = W - PL - PR, plotH = H - PT - PB;
+
+function ticks(max) {
+  if (max <= 5) return [1, 2, 3, 4, 5];
+  const step = Math.ceil(max / 5);
+  const out = [1];
+  for (let v = step; v <= max; v += step) out.push(v);
+  return out;
+}
+
+function drawPanel(panel, pi) {
+  const n = DATA.dates.length;
+  const x = i => n === 1 ? PL + plotW / 2 : PL + (i / (n - 1)) * plotW;
+  const y = r => PT + ((r - 1) / Math.max(1, panel.max - 1)) * plotH;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(panel.title)} 순위 추이">`;
+
+  // 그리드 + y축 눈금 (가라앉은 회색)
+  for (const t of ticks(panel.max)) {
+    svg += `<line x1="${PL}" x2="${PL + plotW}" y1="${y(t)}" y2="${y(t)}"
+             stroke="var(--grid)" stroke-width="1"/>
+            <text x="${PL - 9}" y="${y(t) + 4}" text-anchor="end"
+             font-size="11" fill="var(--text-muted)">${t}위</text>`;
+  }
+  // x축 날짜
+  DATA.dates.forEach((d, i) => {
+    svg += `<text x="${x(i)}" y="${H - PB + 20}" text-anchor="middle"
+             font-size="11" fill="var(--text-secondary)">${d.slice(5)}</text>`;
+  });
+  svg += `<text x="${PL}" y="${H - 6}" font-size="10" fill="var(--text-muted)">↑ 위쪽이 상위</text>`;
+
+  // 마우스 위치 표시용 세로선
+  svg += `<line id="cross${pi}" y1="${PT}" y2="${PT + plotH}" stroke="var(--border)"
+           stroke-width="1" opacity="0"/>`;
+
+  const ends = [];
+  panel.series.forEach((s, si) => {
+    const c = hue(si);
+    // 값이 비어 있으면 선을 끊는다
+    let seg = [];
+    const flush = () => {
+      if (seg.length > 1) {
+        svg += `<polyline points="${seg.map(p => p.join(',')).join(' ')}" fill="none"
+                 stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+      seg = [];
+    };
+    s.values.forEach((v, i) => { v ? seg.push([x(i), y(v)]) : flush(); });
+    flush();
+
+    s.values.forEach((v, i) => {
+      if (!v) return;
+      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${c}"
+               stroke="var(--surface-1)" stroke-width="2"/>`;
+    });
+
+    // 직접 라벨 — 마지막으로 값이 있는 지점 기준
+    for (let i = s.values.length - 1; i >= 0; i--) {
+      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: s.name, c, rank: s.values[i] }); break; }
+    }
+  });
+
+  // 직접 라벨 충돌 방지 — 위에서부터 최소 간격 확보
+  ends.sort((a, b) => a.y - b.y);
+  const GAP = 15;
+  ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < GAP) e.y = ends[i - 1].y + GAP; });
+  ends.forEach(e => {
+    svg += `<text x="${PL + plotW + 10}" y="${e.y + 4}" font-size="11"
+             fill="var(--text-secondary)">
+              <tspan fill="${e.c}">■</tspan> ${esc(e.name)} ${e.rank}위
+            </text>`;
+  });
+
+  svg += `<rect id="hit${pi}" x="${PL}" y="${PT}" width="${plotW}" height="${plotH}"
+           fill="transparent" style="cursor:crosshair"/></svg>`;
+
+  const legend = panel.series.map((s, si) =>
+    `<span><i style="background:${hue(si)}"></i>${esc(s.name)}</span>`).join('');
+
+  return `<div class="card">
+            <h3>${esc(panel.title)}</h3>
+            <p>${esc(panel.note)}</p>
+            ${svg}
+            <div class="legend">${legend}</div>
+          </div>`;
+}
+
+document.getElementById('charts').innerHTML =
+  DATA.panels.map((p, i) => drawPanel(p, i)).join('');
+
+/* ---------- 호버 툴팁 ---------- */
+const tip = document.getElementById('tip');
+DATA.panels.forEach((panel, pi) => {
+  const hit = document.getElementById('hit' + pi);
+  const cross = document.getElementById('cross' + pi);
+  const svg = hit.ownerSVGElement;
+  const n = DATA.dates.length;
+
+  hit.addEventListener('mousemove', ev => {
+    const box = svg.getBoundingClientRect();
+    const sx = (ev.clientX - box.left) / box.width * W;
+    const i = n === 1 ? 0
+      : Math.max(0, Math.min(n - 1, Math.round((sx - PL) / (plotW / (n - 1)))));
+    const px = n === 1 ? PL + plotW / 2 : PL + (i / (n - 1)) * plotW;
+    cross.setAttribute('x1', px); cross.setAttribute('x2', px);
+    cross.setAttribute('opacity', '1');
+
+    tip.innerHTML = `<b>${DATA.dates[i]} · ${esc(panel.title)}</b>` +
+      panel.series.map((s, si) => {
+        const v = s.values[i];
+        return `<div><i style="background:${hue(si)}"></i>${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
+      }).join('');
+    tip.style.opacity = '1';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.min(ev.clientX + 14, innerWidth - tw - 10) + 'px';
+    tip.style.top = Math.max(8, ev.clientY - th - 12) + 'px';
+  });
+  hit.addEventListener('mouseleave', () => {
+    tip.style.opacity = '0';
+    cross.setAttribute('opacity', '0');
+  });
+});
+
+/* ---------- 표로 보기 (접근성 릴리프) ---------- */
+document.getElementById('tables').innerHTML = DATA.panels.map(panel => `
+  <table>
+    <caption>${esc(panel.title)}</caption>
+    <thead><tr><th>키워드</th>${DATA.dates.map(d => `<th class="num">${d.slice(5)}</th>`).join('')}</tr></thead>
+    <tbody>${panel.series.map((s, si) => `
+      <tr>
+        <td><span class="sw" style="background:${hue(si)}"></span>${esc(s.name)}</td>
+        ${s.values.map(v => `<td class="num">${v === null ? '<span class="miss">—</span>' : v + '위'}</td>`).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table>`).join('');
+</script>
+</body>
+</html>
