@@ -1,0 +1,50 @@
+# 콘텐츠 자동화 설정
+# 이 파일 하나로 파이프라인 동작을 통제한다.
+
+llm:
+  provider: anthropic          # anthropic | openai
+  model: claude-sonnet-4-6
+  max_tokens: 4000
+
+# M1 글감 발굴
+research:
+  top_n: 30                    # 상위 몇 개 글을 볼지 (API display 최대 100)
+  # 이 각도들이 상위글에서 얼마나 다뤄지는지 세서 '빈틈'을 찾는다
+  angles:
+    - {id: price,     label: "가격·비용",     cues: ["가격", "비용", "얼마", "요금", "회비", "원"]}
+    - {id: beginner,  label: "초보·처음",     cues: ["처음", "초보", "입문", "시작", "준비물"]}
+    - {id: compare,   label: "비교·차이",     cues: ["비교", "차이", "vs", "어디가", "장단점"]}
+    - {id: routine,   label: "운동 구성",     cues: ["루틴", "프로그램", "구성", "스케줄", "wod"]}
+    - {id: result,    label: "결과·후기",     cues: ["후기", "변화", "감량", "결과", "개월"]}
+    - {id: howto,     label: "방법·팁",       cues: ["방법", "팁", "노하우", "주의"]}
+    - {id: facility,  label: "시설·위치",     cues: ["시설", "주차", "위치", "역", "샤워"]}
+
+# M3 품질 게이트 — 하나라도 실패하면 발행 안 함
+quality:
+  min_chars: 1200
+  max_chars: 6000
+  min_sections: 3              # ## 소제목 최소 개수
+  min_facts: 2                 # 사실 바구니에서 인용한 항목 최소 개수
+  max_keyword_density: 0.02    # 주 키워드가 전체 어절의 2% 넘으면 실패
+  max_similarity: 0.35         # 기존 발행글과의 자카드 유사도 상한
+  require_table_or_list: true
+  # AI 티 나는 상투어 — 있으면 실패
+  banned_phrases:
+    - "에 대해 알아보겠습니다"
+    - "에 대해 알아보도록"
+    - "여러분"
+    - "마무리하며"
+    - "오늘은"
+    - "정리해보겠습니다"
+    - "도움이 되셨길"
+    - "마치겠습니다"
+    - "살펴보겠습니다"
+
+# M4 발행 가드레일
+publish:
+  max_per_day: 2               # 하루 상한 (절대 넘기지 않음)
+  min_gap_minutes: 180         # 연속 발행 사이 최소 간격
+  jitter_minutes: [0, 40]      # 예약 시각에 더할 랜덤 지연
+  dry_run: true                # true면 임시저장까지만. 실제 발행은 false로 바꿀 것
+  # 아래 항목은 구현하지 않는다. 계정 정지 사유이므로 추가 요청도 받지 않음.
+  # 공감/댓글/서이추/이웃추가 자동화 없음
