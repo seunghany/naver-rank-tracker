@@ -38,6 +38,7 @@ SYSTEM = """당신은 네이버 블로그에 실을 글을 쓴다. 광고 카피
 1. 숫자, 기간, 사례, 가격, 인원은 <사실> 목록에 있는 것만 쓴다.
    목록에 없는 수치는 절대 지어내지 않는다. 필요하면 그 문장을 빼라.
 2. <사실>을 쓸 때는 문장 끝에 [fact:해당id] 를 붙인다. 최소 2개 이상 쓴다.
+   "※ 사용 조건" 이 달린 항목은 그 조건을 반드시 지킨다. 조건을 지킬 수 없으면 그 항목을 쓰지 않는다.
 3. 남의 글을 요약하거나 바꿔 쓰지 않는다. <이미 포화된 각도>는 피하고
    <빈 각도>를 정면으로 다룬다.
 
@@ -72,10 +73,15 @@ def build_prompt(brief: dict, facts: list[dict]) -> str:
     gaps = [a for a in brief["angle_coverage"] if a["coverage_pct"] < 25][:3]
     saturated = [a for a in brief["angle_coverage"] if a["coverage_pct"] >= 50][:4]
 
-    fact_lines = "\n".join(
-        f"- [{f['id']}] {f['fact']}" + (f"  (출처: {f['source']})" if f.get("source") else "")
-        for f in facts
-    )
+    def fact_line(f: dict) -> str:
+        line = f"- [{f['id']}] {f['fact']}"
+        if f.get("source"):
+            line += f"  (출처: {f['source']})"
+        if f.get("caution"):
+            line += f"\n    ※ 사용 조건: {' '.join(f['caution'].split())}"
+        return line
+
+    fact_lines = "\n".join(fact_line(f) for f in facts)
     gap_lines = "\n".join(f"- {g['label']} — 상위 {brief['n_analyzed']}개 중 {g['covered']}개만 다룸"
                           for g in gaps) or "- (뚜렷한 빈틈 없음 — 깊이로 승부해야 함)"
     sat_lines = "\n".join(f"- {s['label']} ({s['coverage_pct']}%)" for s in saturated) or "- 없음"
