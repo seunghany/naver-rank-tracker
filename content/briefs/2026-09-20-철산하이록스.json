@@ -1,0 +1,28 @@
+{
+  "keyword": "철산하이록스",
+  "collected_at": "2026-09-20T15:20:28+09:00",
+  "n_analyzed": 30,
+  "total_documents": 188,
+  "note": "MCP 네이버 검색으로 수집(키 발급 전 임시). 정식 경로는 src/find_topics.py",
+  "angle_coverage": [
+    {"id": "price", "label": "가격·비용", "covered": 1, "coverage_pct": 3.3},
+    {"id": "beginner", "label": "초보·처음", "covered": 3, "coverage_pct": 10.0},
+    {"id": "compare", "label": "비교·차이", "covered": 2, "coverage_pct": 6.7},
+    {"id": "routine", "label": "운동 구성", "covered": 8, "coverage_pct": 26.7},
+    {"id": "result", "label": "결과·후기", "covered": 9, "coverage_pct": 30.0},
+    {"id": "facility", "label": "시설·위치", "covered": 7, "coverage_pct": 23.3}
+  ],
+  "noise_ratio": "상위 30개 중 7개가 철산 지역 음식점 후기 — '철산' 지역어 때문에 섞여 들어옴",
+  "top_bloggers": [
+    ["KOREA_CLASS (위무브)", 6],
+    ["호픽 블로그 (음식점)", 6],
+    ["리부트 팀 트레이닝", 4],
+    ["철산유일 웨이트&펑셔널 PT (무브데이)", 2]
+  ],
+  "competitor_notes": {
+    "위무브": "하이록스 정식 지부 표방. 장비 목록을 텍스트로 공개(무동력 트레드밀 4대, 스키에르그 4대, 로잉 4대, 어썰트바이크 2대, 바이크에르그 2대, 슬레드 푸시 2대, 슬레드 풀 2대). 시뮬레이션 콘텐츠 반복 발행.",
+    "크로스핏 어셈블": "외부 블로거 체험단 운영 중 — 상위 30개 중 4개가 체험단 후기.",
+    "리부트": "상위에 4개 있으나 3개는 본문 텍스트가 거의 없고 해시태그만 있음."
+  },
+  "gap": "초보·준비 각도(10%)와 가격(3%)이 비어 있다. 특히 '어떤 순서로 준비하나'에 답하는 글이 리부트 자체 글 1개뿐."
+}
