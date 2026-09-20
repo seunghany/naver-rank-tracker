@@ -20,6 +20,22 @@ ROOT = Path(__file__).resolve().parent.parent
 PROFILE = ROOT / ".naver-profile"          # .gitignore 에 등록됨. 절대 커밋 금지.
 
 
+def session_status(url: str, body: str) -> str | bool:
+    """로그인 상태를 판별한다.
+
+    네이버는 로그인 직후 기기등록/보안 리다이렉트를 일으킬 수 있으므로,
+    해당 리다이렉트를 로그인 실패로 보지 않고 보안 흐름으로 인식한다.
+    """
+    lowered = body.lower()
+    if "deviceadd" in url.lower() or "device add" in lowered or "기기등록" in body:
+        return "security_redirect"
+    if ("로그아웃" in body) or ("logout" in lowered):
+        return True
+    if ("로그인" in body) and ("네이버" in body):
+        return False
+    return bool(("로그아웃" in body) or ("logout" in lowered))
+
+
 def main() -> None:
     try:
         from playwright.sync_api import sync_playwright
@@ -41,12 +57,17 @@ def main() -> None:
 
         input("로그인 완료 후 Enter > ")
 
-        page.goto("https://www.naver.com", wait_until="domcontentloaded")
+        page.goto("https://www.naver.com", wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(1500)
         body = page.content()
-        ok = ("로그아웃" in body) or ("logout" in body.lower())
-        print("\n세션 저장됨 ✓" if ok else
-              "\n로그인 상태를 확인하지 못했습니다. 다시 실행해 보세요.")
+        status = session_status(page.url, body)
+        if status == "security_redirect":
+            print("\n네이버 보안 페이지로 이동했습니다. 기기등록/보안 확인을 마치고 다시 확인해 주세요.")
+            print("로그인 완료 후, 브라우저가 네이버 메인으로 돌아오면 다시 실행해 주세요.")
+        elif status is True:
+            print("\n세션 저장됨 ✓")
+        else:
+            print("\n로그인 상태를 확인하지 못했습니다. 다시 실행해 보세요.")
         ctx.close()
 
 

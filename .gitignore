@@ -13,3 +13,13 @@ content/state/debug-*.png
 
 # 비용 장부 (사용 패턴이 드러나므로 공개 저장소에는 올리지 않음)
 content/state/cost_log.csv
+
+# 사진 원본 (장당 3~12MB). 웹용(_web)만 저장소에 올린다.
+content/photos/reboot/equipment/*
+content/photos/reboot/facility/*
+content/photos/reboot/class/*
+content/photos/reboot/members/*
+content/photos/reboot/misc/*
+content/photos/teampoise/*/*
+!content/photos/**/.gitkeep
+content/photos/_thumb/
