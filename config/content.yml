@@ -3,7 +3,7 @@
 
 llm:
   provider: anthropic          # anthropic | openai
-  model: claude-sonnet-4-6
+  model: claude-sonnet-5              # 2026-09 기준 유효한 ID (문서 확인함)
   max_tokens: 4000
 
 # M1 글감 발굴
