@@ -9,6 +9,8 @@ import html
 import re
 
 FACT_RE = re.compile(r"\s*\[fact:[a-zA-Z0-9_\-]+\]")
+# <!-- 📷 ... --> 형태의 사진 배치 지시. 발행본에는 나가지 않는다.
+COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^\)]+)\)")
 
@@ -38,6 +40,7 @@ def _table(rows: list[str]) -> str:
 
 
 def convert(md: str) -> str:
+    md = COMMENT_RE.sub("", md)      # 사진 지시 제거
     lines = md.splitlines()
     out: list[str] = []
     i = 0

@@ -24,6 +24,7 @@ PUBLISHED = ROOT / "content" / "published"
 
 WORD_RE = re.compile(r"[가-힣A-Za-z0-9]+")
 FACT_RE = re.compile(r"\[fact:([a-zA-Z0-9_\-]+)\]")
+COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 
 
 def split_frontmatter(raw: str) -> tuple[dict, str]:
@@ -45,6 +46,7 @@ def check(path: Path, cfg: dict) -> list[str]:
     """실패 사유 목록을 돌려준다. 빈 목록이면 통과."""
     q = cfg["quality"]
     meta, body = split_frontmatter(path.read_text(encoding="utf-8"))
+    body = COMMENT_RE.sub("", body).strip()   # 사진 지시는 분량에서 제외
     fails: list[str] = []
 
     # 1. 길이
