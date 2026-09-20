@@ -20,11 +20,15 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
 import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cost_log  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config" / "content.yml"
@@ -111,24 +115,39 @@ def build_prompt(brief: dict, facts: list[dict]) -> str:
 위 조건으로 블로그 글 하나를 써라. 제목은 첫 줄에 "# "로 시작한다."""
 
 
-def call_anthropic(system: str, prompt: str, cfg: dict) -> str:
+def call_anthropic(system: str, prompt: str, cfg: dict) -> dict:
+    """API 직접 호출. 실제 청구가 발생하는 경로."""
     key = os.environ.get("ANTHROPIC_API_KEY")
     if not key:
-        sys.exit("ANTHROPIC_API_KEY 가 없습니다. console.anthropic.com 에서 발급하세요.")
+        sys.exit("ANTHROPIC_API_KEY 가 없습니다. console.anthropic.com 에서 발급하세요.\n"
+                 "  (키 없이 쓰시려면 config/content.yml 의 provider 를 claude-code 로)")
+    model = cfg["llm"]["model"]
+    t0 = time.time()
     r = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                  "content-type": "application/json"},
-        json={"model": cfg["llm"]["model"], "max_tokens": cfg["llm"]["max_tokens"],
+        json={"model": model, "max_tokens": cfg["llm"]["max_tokens"],
               "system": system, "messages": [{"role": "user", "content": prompt}]},
         timeout=180,
     )
     if r.status_code != 200:
         sys.exit(f"LLM 호출 실패 HTTP {r.status_code}: {r.text[:300]}")
-    return "".join(b.get("text", "") for b in r.json().get("content", []))
+    data = r.json()
+    usage = data.get("usage", {})
+    tin = int(usage.get("input_tokens", 0))
+    tout = int(usage.get("output_tokens", 0))
+    return {
+        "text": "".join(b.get("text", "") for b in data.get("content", [])),
+        "provider": "anthropic", "model": model,
+        "input_tokens": tin, "output_tokens": tout,
+        "billed_usd": cost_log.price_of(cfg, model, tin, tout),
+        "subscription_usd": 0.0,
+        "seconds": round(time.time() - t0, 1),
+    }
 
 
-def call_claude_code(system: str, prompt: str, cfg: dict) -> str:
+def call_claude_code(system: str, prompt: str, cfg: dict) -> dict:
     """구독제 경로 — API 키 대신 Claude Code CLI 를 거쳐 호출한다.
 
     핵심은 ANTHROPIC_API_KEY 를 자식 프로세스 환경에서 제거하는 것이다.
@@ -155,41 +174,95 @@ def call_claude_code(system: str, prompt: str, cfg: dict) -> str:
            "--append-system-prompt", system,
            "--output-format", "json"]
 
-    print("  (Claude Code 구독 경로로 호출 중 — 30초~2분 걸릴 수 있습니다)")
+    print("  (Claude Code 구독 경로 — 30초~2분 걸릴 수 있습니다)")
+    t0 = time.time()
     try:
         r = subprocess.run(cmd, env=env, capture_output=True, text=True,
-                           timeout=600, encoding="utf-8")
+                           timeout=900, encoding="utf-8")
     except subprocess.TimeoutExpired:
-        sys.exit("claude CLI 응답이 10분을 넘겨 중단했습니다.")
-
+        sys.exit("claude CLI 응답이 15분을 넘겨 중단했습니다.")
     if r.returncode != 0:
         sys.exit(f"claude CLI 실패 (exit {r.returncode}):\n{(r.stderr or r.stdout)[:500]}")
 
     try:
         payload = json.loads(r.stdout)
     except json.JSONDecodeError:
-        return r.stdout.strip()             # 일부 버전은 평문을 그대로 준다
+        payload = {"result": r.stdout.strip()}
 
-    cost = payload.get("total_cost_usd")
-    if cost is not None:
-        print(f"  이번 호출 비용 환산: ${cost:.4f} (구독 사용량에서 차감됩니다)")
-    return (payload.get("result") or "").strip()
+    usage = payload.get("usage") or {}
+    return {
+        "text": (payload.get("result") or "").strip(),
+        "provider": "claude-code", "model": cfg["llm"]["model"],
+        "input_tokens": int(usage.get("input_tokens", 0) or 0),
+        "output_tokens": int(usage.get("output_tokens", 0) or 0),
+        "billed_usd": 0.0,                                   # 구독이라 청구 없음
+        "subscription_usd": float(payload.get("total_cost_usd") or 0.0),
+        "seconds": round(time.time() - t0, 1),
+    }
 
 
-def generate(system: str, prompt: str, cfg: dict) -> str:
-    """config 의 provider 에 따라 경로를 고른다."""
-    provider = cfg["llm"].get("provider", "anthropic")
+def resolve_provider(cfg: dict, override: str | None) -> tuple[str, str]:
+    """실제로 쓸 경로를 정한다. (provider, 이유) 를 돌려준다."""
+    if override:
+        return override, "명령줄 지정"
+
+    setting = cfg["llm"].get("provider", "anthropic")
+    if setting != "auto":
+        return setting, "설정값"
+
+    # auto: 이번 달 실제 청구액이 예산을 넘으면 구독으로 넘어간다
+    budget = float(cfg["llm"].get("monthly_budget_usd", 3.0))
+    spent = cost_log.month_billed_usd()
+    rate = float(cfg["llm"].get("krw_per_usd", 1390))
+    if spent >= budget:
+        return ("claude-code",
+                f"이번 달 API 청구 ${spent:.2f} ≥ 예산 ${budget:.2f} "
+                f"({spent * rate:,.0f}원 / {budget * rate:,.0f}원) → 구독으로 전환")
+    return ("anthropic",
+            f"이번 달 API 청구 ${spent:.2f} / 예산 ${budget:.2f} "
+            f"({spent * rate:,.0f}원 / {budget * rate:,.0f}원)")
+
+
+def generate(system: str, prompt: str, cfg: dict, override: str | None,
+             keyword: str, center: str) -> str:
+    provider, why = resolve_provider(cfg, override)
+    print(f"  경로: {provider}  ({why})")
+
     if provider == "claude-code":
-        return call_claude_code(system, prompt, cfg)
-    if provider == "anthropic":
-        return call_anthropic(system, prompt, cfg)
-    sys.exit(f"알 수 없는 provider: {provider}  (anthropic | claude-code)")
+        out = call_claude_code(system, prompt, cfg)
+    elif provider == "anthropic":
+        out = call_anthropic(system, prompt, cfg)
+    else:
+        sys.exit(f"알 수 없는 provider: {provider}  (auto | anthropic | claude-code)")
+
+    cost_log.record(provider=out["provider"], model=out["model"],
+                    keyword=keyword, center=center,
+                    input_tokens=out["input_tokens"], output_tokens=out["output_tokens"],
+                    billed_usd=f"{out['billed_usd']:.6f}",
+                    subscription_usd=f"{out['subscription_usd']:.6f}",
+                    seconds=out["seconds"])
+
+    rate = float(cfg["llm"].get("krw_per_usd", 1390))
+    if out["billed_usd"]:
+        print(f"  비용: ${out['billed_usd']:.4f} (약 {out['billed_usd'] * rate:,.0f}원) "
+              f"· 입력 {out['input_tokens']:,} / 출력 {out['output_tokens']:,} 토큰 "
+              f"· {out['seconds']}초")
+    else:
+        won = out["subscription_usd"] * rate
+        print(f"  비용: 청구 없음 (구독 차감분 환산 약 {won:,.0f}원) · {out['seconds']}초")
+    return out["text"]
 
 
 def main() -> None:
-    if len(sys.argv) < 3:
-        sys.exit("사용: python src/write_draft.py <brief.json> <Reboot|TeamPoise>")
-    brief_path, center = Path(sys.argv[1]), sys.argv[2]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    override = None
+    for a in sys.argv[1:]:
+        if a.startswith("--provider="):
+            override = a.split("=", 1)[1]
+    if len(args) < 2:
+        sys.exit("사용: python src/write_draft.py <brief.json> <Reboot|TeamPoise> "
+                 "[--provider=anthropic|claude-code]")
+    brief_path, center = Path(args[0]), args[1]
 
     cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
     brief = json.loads(brief_path.read_text(encoding="utf-8"))
@@ -198,7 +271,8 @@ def main() -> None:
     facts = load_facts(center)
 
     print(f"[{brief['keyword']}] 초안 생성 중… (사실 {len(facts)}개 투입)")
-    md = generate(SYSTEM, build_prompt(brief, facts), cfg).strip()
+    md = generate(SYSTEM, build_prompt(brief, facts), cfg,
+                  override, brief["keyword"], center).strip()
 
     # 첫 줄 "# 제목" 을 프론트매터로 올린다
     lines = md.splitlines()

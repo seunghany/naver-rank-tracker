@@ -2,14 +2,27 @@
 # 이 파일 하나로 파이프라인 동작을 통제한다.
 
 llm:
-  # anthropic   = API 키로 직접 호출. 빠르고 안정적. 편당 약 50원이 따로 과금된다.
-  # claude-code = 설치된 Claude Code CLI 를 거쳐 호출. 구독 사용량에서 차감되고
-  #               별도 과금이 없다. 대신 느리고, 평소 Claude 사용량과 한도를 공유한다.
-  #               ANTHROPIC_API_KEY 환경변수가 있으면 구독이 아니라 API 로 붙으니
-  #               이 모드를 쓸 때는 그 변수를 설정하지 말 것.
-  provider: anthropic          # anthropic | claude-code
-  model: claude-sonnet-5              # 2026-09 기준 유효한 ID (문서 확인함)
+  # auto        = 평소엔 API(빠름), 이번 달 청구액이 예산을 넘으면 구독으로 자동 전환
+  # anthropic   = 항상 API. 편당 과금.
+  # claude-code = 항상 구독. 청구 없음. 대신 느리고 평소 Claude 한도를 공유.
+  provider: auto
+
+  model: claude-sonnet-5       # 2026-09 문서 기준 유효한 ID
   max_tokens: 4000
+
+  # auto 모드 전환선. 이번 달 "실제 청구액" 이 이 금액에 닿으면 구독 경로로 넘어간다.
+  # 구독으로 쓴 건 지갑에서 안 나가므로 이 합계에 포함하지 않는다.
+  monthly_budget_usd: 3.0      # 약 4,200원
+
+  # 100만 토큰당 USD. 요금이 바뀌면 여기만 고치면 된다.
+  # 2026-09 공식 문서 기준.
+  pricing:
+    claude-sonnet-5:            {input: 2.0,  output: 10.0}
+    claude-haiku-4-5-20251001:  {input: 1.0,  output: 5.0}
+
+  # 화면에 원화를 같이 찍기 위한 근사 환율. 2026-09-18 기준 1,386원.
+  # 정확할 필요는 없고, 감만 잡으면 되는 값이다.
+  krw_per_usd: 1386
 
 # M1 글감 발굴
 research:

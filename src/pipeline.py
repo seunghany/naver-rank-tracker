@@ -23,16 +23,19 @@ def run(step: str, cmd: list[str]) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) < 3:
-        sys.exit("사용: python src/pipeline.py <키워드> <Reboot|TeamPoise>")
-    keyword, center = sys.argv[1], sys.argv[2]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    passthru = [a for a in sys.argv[1:] if a.startswith("--provider=")]
+    if len(args) < 2:
+        sys.exit("사용: python src/pipeline.py <키워드> <Reboot|TeamPoise> "
+                 "[--provider=anthropic|claude-code]")
+    keyword, center = args[0], args[1]
     today = datetime.now(KST).strftime("%Y-%m-%d")
 
     brief = ROOT / "content" / "briefs" / f"{today}-{keyword}.json"
     draft = ROOT / "content" / "drafts" / f"{today}-{keyword}.md"
 
     run("M1 글감 발굴", [sys.executable, "src/find_topics.py", keyword])
-    run("M2 초안 생성", [sys.executable, "src/write_draft.py", str(brief), center])
+    run("M2 초안 생성", [sys.executable, "src/write_draft.py", str(brief), center] + passthru)
     run("M3 품질 게이트", [sys.executable, "src/quality_gate.py", str(draft)])
 
     print(f"""

@@ -10,3 +10,6 @@ __pycache__/
 
 # 디버그 스크린샷 (화면에 계정 정보가 찍힐 수 있음)
 content/state/debug-*.png
+
+# 비용 장부 (사용 패턴이 드러나므로 공개 저장소에는 올리지 않음)
+content/state/cost_log.csv
