@@ -47,13 +47,36 @@ HARD_DAILY_CAP = 3          # config 가 뭐라고 하든 이 위로는 안 올�
 # 실패하면 스크린샷을 남겨서 고칠 수 있게 했다.
 SEL = {
     "editor_iframe": "#mainFrame",
-    "title": ".se-documentTitle .se-text-paragraph, .se-title-text .se-text-paragraph",
-    "body": ".se-component.se-text .se-text-paragraph",
-    "popup_close": ".se-popup-button-cancel, .se-help-panel-close-button, button.se-popup-close",
-    "save_draft": "button.save_btn__bzc5B, button[class*='save_btn']",
-    "publish_open": "button.publish_btn__m9KHH, button[class*='publish_btn']",
-    "publish_confirm": "button.confirm_btn__WEaBq, button[class*='confirm_btn']",
+    "title": ".se-documentTitle .se-text-paragraph, .se-title-text .se-text-paragraph, "
+             "[contenteditable='true'].se-text-paragraph",
+    "body": ".se-component.se-text .se-text-paragraph, "
+            ".se-main-container .se-text-paragraph",
+    # 처음 열면 "작성 중인 글이 있습니다" 복구 팝업이 뜬다. 취소를 눌러야 빈 글로 시작한다.
+    "restore_cancel": "button.se-popup-button-cancel, .se-popup-button-cancel, "
+                      "button:has-text('취소')",
+    "help_close": ".se-help-panel-close-button, button.se-popup-close, "
+                  "button:has-text('닫기')",
+    "save_draft": "button.save_btn__bzc5B, button[class*='save_btn'], "
+                  "button:has-text('저장')",
+    "publish_open": "button.publish_btn__m9KHH, button[class*='publish_btn'], "
+                    "button:has-text('발행')",
+    "publish_confirm": "button.confirm_btn__WEaBq, button[class*='confirm_btn'], "
+                       "button:has-text('발행')",
 }
+
+
+def try_click(frame, selectors: str, label: str, timeout: int = 2000) -> bool:
+    """콤마로 나열된 후보 셀렉터를 차례로 눌러본다. 하나라도 되면 True."""
+    for sel in [x.strip() for x in selectors.split(", ") if x.strip()]:
+        try:
+            loc = frame.locator(sel).first
+            if loc.is_visible(timeout=timeout):
+                loc.click()
+                print(f"    · {label}: '{sel}' 로 처리")
+                return True
+        except Exception:
+            continue
+    return False
 
 
 def load_state() -> dict:
@@ -111,7 +134,8 @@ def paste_html(page, frame, selector: str, html: str) -> bool:
                 });
                 await navigator.clipboard.write([item]);
             }""", html)
-        frame.click(selector)
+        if not try_click(frame, selector, "본문 칸", timeout=8000):
+            return False
         page.wait_for_timeout(400)
         page.keyboard.press("Control+V")
         page.wait_for_timeout(1200)
@@ -121,15 +145,35 @@ def paste_html(page, frame, selector: str, html: str) -> bool:
         return False
 
 
-def dump_debug(page, tag: str) -> None:
+def dump_debug(page, frame, tag: str) -> None:
+    """실패 지점의 화면과 후보 요소를 남긴다. 이 둘이면 셀렉터를 고칠 수 있다."""
     SHOTS.mkdir(parents=True, exist_ok=True)
-    shot = SHOTS / f"debug-{tag}-{datetime.now(KST):%Y%m%d-%H%M%S}.png"
+    stamp = datetime.now(KST).strftime("%Y%m%d-%H%M%S")
+
+    shot = SHOTS / f"debug-{tag}-{stamp}.png"
     try:
         page.screenshot(path=str(shot), full_page=True)
         print(f"  스크린샷: {shot}")
-        print("  이 파일을 Claude 에게 보내면 셀렉터를 고쳐드립니다.")
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"  스크린샷 실패: {exc}")
+
+    probe = SHOTS / f"debug-{tag}-{stamp}.txt"
+    try:
+        info = frame.evaluate("""() => {
+            const btn = [...document.querySelectorAll('button')]
+                .filter(b => b.offsetParent)
+                .slice(0, 40)
+                .map(b => `BUTTON "${(b.innerText||'').trim().slice(0,20)}" class=${b.className}`);
+            const ed = [...document.querySelectorAll('[contenteditable="true"]')]
+                .slice(0, 20)
+                .map(e => `EDITABLE <${e.tagName.toLowerCase()}> class=${e.className}`);
+            return [...btn, ...ed].join('\n');
+        }""")
+        probe.write_text(info, encoding="utf-8")
+        print(f"  후보 요소 목록: {probe}")
+        print("  이 두 파일을 Claude 에게 보내면 셀렉터를 고쳐드립니다.")
+    except Exception as exc:
+        print(f"  요소 수집 실패: {exc}")
 
 
 def main() -> None:
@@ -193,39 +237,47 @@ def main() -> None:
         )
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
         try:
+            print("  [1/5] 글쓰기 화면 열기")
             page.goto(f"https://blog.naver.com/{blog_id}/postwrite",
                       wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_timeout(3500)
+            page.wait_for_timeout(4000)
 
             frame = page.frame(name="mainFrame") or page.main_frame
-            for sel in SEL["popup_close"].split(", "):          # 도움말 팝업 닫기
-                try:
-                    if frame.locator(sel).first.is_visible(timeout=1200):
-                        frame.locator(sel).first.click()
-                        page.wait_for_timeout(400)
-                except Exception:
-                    pass
 
-            frame.click(SEL["title"], timeout=15000)
+            print("  [2/5] 팝업 정리")
+            try_click(frame, SEL["restore_cancel"], "작성 중인 글 복구 팝업")
+            page.wait_for_timeout(500)
+            try_click(frame, SEL["help_close"], "도움말 팝업")
+            page.wait_for_timeout(500)
+
+            print("  [3/5] 제목 입력")
+            if not try_click(frame, SEL["title"], "제목 칸", timeout=8000):
+                print("  ! 제목 칸을 못 찾았습니다")
+                dump_debug(page, frame, "title")
+                sys.exit(1)
             page.keyboard.type(title, delay=random.randint(25, 70))
-            page.wait_for_timeout(600)
+            page.wait_for_timeout(700)
 
+            print("  [4/5] 본문 붙여넣기")
             if not paste_html(page, frame, SEL["body"], html):
-                dump_debug(page, "paste")
+                dump_debug(page, frame, "paste")
                 sys.exit(1)
 
+            print("  [5/5] " + ("발행" if live else "임시저장"))
             if live:
-                frame.click(SEL["publish_open"], timeout=15000)
-                page.wait_for_timeout(1200)
-                frame.click(SEL["publish_confirm"], timeout=15000)
+                if not try_click(frame, SEL["publish_open"], "발행 버튼", timeout=10000):
+                    dump_debug(page, frame, "publish"); sys.exit(1)
+                page.wait_for_timeout(1500)
+                try_click(frame, SEL["publish_confirm"], "발행 확인", timeout=10000)
                 page.wait_for_timeout(4000)
-                print("발행 완료")
+                print("  발행 완료")
                 PUBLISHED.mkdir(parents=True, exist_ok=True)
                 draft.rename(PUBLISHED / draft.name)
             else:
-                frame.click(SEL["save_draft"], timeout=15000)
+                if not try_click(frame, SEL["save_draft"], "저장 버튼", timeout=10000):
+                    dump_debug(page, frame, "save"); sys.exit(1)
                 page.wait_for_timeout(2500)
-                print("임시저장 완료 — 네이버 블로그에서 확인 후 직접 발행하세요.")
+                print("  임시저장 완료 — 네이버 블로그에서 확인 후 직접 발행하세요.")
 
             state["runs"].append({
                 "at": datetime.now(KST).isoformat(timespec="seconds"),
@@ -235,7 +287,7 @@ def main() -> None:
 
         except Exception as exc:
             print(f"\n✗ 실패: {exc}")
-            dump_debug(page, "error")
+            dump_debug(page, frame, "error")
             sys.exit(1)
         finally:
             page.wait_for_timeout(2000)
