@@ -55,7 +55,8 @@ SYSTEM = """당신은 네이버 블로그에 실을 글을 쓴다. 광고 카피
   "마무리하며", "살펴보겠습니다", "도움이 되셨길".
 - 주 키워드를 억지로 반복하지 않는다. 자연스러우면 3~5회면 충분하다.
 
-출력은 마크다운 본문만. 설명이나 머리말을 덧붙이지 않는다."""
+출력은 마크다운 본문만. 설명이나 머리말을 덧붙이지 않는다.
+파일을 읽거나 명령을 실행하지 말고, 주어진 정보만으로 글을 써서 바로 출력한다."""
 
 
 def load_facts(center: str) -> list[dict]:
@@ -127,6 +128,64 @@ def call_anthropic(system: str, prompt: str, cfg: dict) -> str:
     return "".join(b.get("text", "") for b in r.json().get("content", []))
 
 
+def call_claude_code(system: str, prompt: str, cfg: dict) -> str:
+    """구독제 경로 — API 키 대신 Claude Code CLI 를 거쳐 호출한다.
+
+    핵심은 ANTHROPIC_API_KEY 를 자식 프로세스 환경에서 제거하는 것이다.
+    이 변수가 있으면 Claude Code 가 구독이 아니라 API 로 붙어서 별도 과금된다
+    (Anthropic 지원 문서에 명시된 동작).
+
+    --bare 는 쓰지 않는다. bare 모드는 OAuth 를 건너뛰어서
+    구독 로그인이 아니라 API 키를 요구하기 때문이다.
+    """
+    import shutil
+    import subprocess
+
+    exe = shutil.which("claude")
+    if not exe:
+        sys.exit("claude CLI 를 찾지 못했습니다.\n"
+                 "  설치: npm install -g @anthropic-ai/claude-code\n"
+                 "  로그인: claude  (한 번 실행해서 구독 계정으로 로그인)")
+
+    env = dict(os.environ)
+    env.pop("ANTHROPIC_API_KEY", None)      # ← 이게 있으면 구독이 아니라 API 과금
+    env.pop("ANTHROPIC_AUTH_TOKEN", None)
+
+    cmd = [exe, "-p", prompt,
+           "--append-system-prompt", system,
+           "--output-format", "json"]
+
+    print("  (Claude Code 구독 경로로 호출 중 — 30초~2분 걸릴 수 있습니다)")
+    try:
+        r = subprocess.run(cmd, env=env, capture_output=True, text=True,
+                           timeout=600, encoding="utf-8")
+    except subprocess.TimeoutExpired:
+        sys.exit("claude CLI 응답이 10분을 넘겨 중단했습니다.")
+
+    if r.returncode != 0:
+        sys.exit(f"claude CLI 실패 (exit {r.returncode}):\n{(r.stderr or r.stdout)[:500]}")
+
+    try:
+        payload = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return r.stdout.strip()             # 일부 버전은 평문을 그대로 준다
+
+    cost = payload.get("total_cost_usd")
+    if cost is not None:
+        print(f"  이번 호출 비용 환산: ${cost:.4f} (구독 사용량에서 차감됩니다)")
+    return (payload.get("result") or "").strip()
+
+
+def generate(system: str, prompt: str, cfg: dict) -> str:
+    """config 의 provider 에 따라 경로를 고른다."""
+    provider = cfg["llm"].get("provider", "anthropic")
+    if provider == "claude-code":
+        return call_claude_code(system, prompt, cfg)
+    if provider == "anthropic":
+        return call_anthropic(system, prompt, cfg)
+    sys.exit(f"알 수 없는 provider: {provider}  (anthropic | claude-code)")
+
+
 def main() -> None:
     if len(sys.argv) < 3:
         sys.exit("사용: python src/write_draft.py <brief.json> <Reboot|TeamPoise>")
@@ -139,7 +198,7 @@ def main() -> None:
     facts = load_facts(center)
 
     print(f"[{brief['keyword']}] 초안 생성 중… (사실 {len(facts)}개 투입)")
-    md = call_anthropic(SYSTEM, build_prompt(brief, facts), cfg).strip()
+    md = generate(SYSTEM, build_prompt(brief, facts), cfg).strip()
 
     # 첫 줄 "# 제목" 을 프론트매터로 올린다
     lines = md.splitlines()

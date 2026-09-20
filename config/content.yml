@@ -2,7 +2,12 @@
 # 이 파일 하나로 파이프라인 동작을 통제한다.
 
 llm:
-  provider: anthropic          # anthropic | openai
+  # anthropic   = API 키로 직접 호출. 빠르고 안정적. 편당 약 50원이 따로 과금된다.
+  # claude-code = 설치된 Claude Code CLI 를 거쳐 호출. 구독 사용량에서 차감되고
+  #               별도 과금이 없다. 대신 느리고, 평소 Claude 사용량과 한도를 공유한다.
+  #               ANTHROPIC_API_KEY 환경변수가 있으면 구독이 아니라 API 로 붙으니
+  #               이 모드를 쓸 때는 그 변수를 설정하지 말 것.
+  provider: anthropic          # anthropic | claude-code
   model: claude-sonnet-5              # 2026-09 기준 유효한 ID (문서 확인함)
   max_tokens: 4000
 
