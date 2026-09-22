@@ -11,6 +11,7 @@
     --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#8a8981;
     --grid:#eceae5;
     --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --c0:#4f46e5; --c0-bg:#eef0fd; --c1:#0f8f7e; --c1-bg:#e8f6f3;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -19,6 +20,7 @@
       --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
       --grid:#2a2a27;
       --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --c0:#8b85ff; --c0-bg:#1b1a2e; --c1:#2fc2ad; --c1-bg:#132522;
     }
   }
   :root[data-theme="dark"] {
@@ -27,6 +29,7 @@
     --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
     --grid:#2a2a27;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --c0:#8b85ff; --c0-bg:#1b1a2e; --c1:#2fc2ad; --c1-bg:#132522;
   }
   * { box-sizing:border-box; }
   body {
@@ -47,6 +50,11 @@
              white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tile .v { font-size:1.45rem; font-weight:650; letter-spacing:-0.025em; line-height:1.1; }
   .tile .d { font-size:.7rem; color:var(--text-muted); margin-top:3px; }
+  .tile .c { font-size:.66rem; color:var(--text-muted); margin:-3px 0 5px; }
+  .tile.focus { border-color:var(--s4); box-shadow:inset 0 0 0 1px var(--s4); }
+  .tile.focus .k { color:var(--text-primary); font-weight:600; }
+  .star { color:var(--s4); }
+  tr.focus td { font-weight:600; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:16px; }
   .card { background:var(--surface-1); border:1px solid var(--border);
           border-radius:12px; padding:16px 16px 12px; }
@@ -74,6 +82,20 @@
   #tip b { color:var(--text-primary); display:block; margin-bottom:4px; font-size:.76rem; }
   #tip div { display:flex; align-items:center; gap:6px; line-height:1.55; }
   #tip i { width:8px; height:8px; border-radius:2px; flex:none; }
+  .jump { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
+  .jump a { text-decoration:none; font-size:.8rem; font-weight:600; padding:6px 12px;
+            border-radius:999px; color:var(--accent); background:var(--accent-bg);
+            border:1px solid var(--accent); }
+  .center { margin-top:36px; padding:20px 18px 8px; border-radius:16px;
+            background:var(--accent-bg); border:1px solid var(--border);
+            border-top:5px solid var(--accent); scroll-margin-top:12px; }
+  .center-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .center-head h2 { margin:0; font-size:1.15rem; letter-spacing:-0.01em;
+                    text-transform:none; color:var(--accent); font-weight:700; }
+  .center-head span { font-size:.76rem; color:var(--text-muted); }
+  .center h3.sec { font-size:.74rem; margin:22px 0 10px; letter-spacing:.06em;
+                   color:var(--text-secondary); font-weight:600; }
+  @media (max-width:520px){ .center{padding:16px 10px 6px;} }
   @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -82,16 +104,10 @@
   <h1>네이버 노출 추적</h1>
   <p class="sub">__UPDATED__ 기준 · 플레이스는 지역검색 API가 상위 5위까지만 주므로 그 밖은 측정 불가 · 블로그는 최대 __DEPTH__위까지 확인</p>
 
-  <h2>오늘 상태</h2>
-  <div class="tiles" id="tiles"></div>
+  <p class="sub"><span class="star">★</span> = 회원들이 실제로 가장 많이 검색하는 키워드 (네이버 데이터랩 12개월 검색량 기준)</p>
 
-  <h2>추이</h2>
-  <div class="grid" id="charts"></div>
-
-  <details open>
-    <summary>표로 보기</summary>
-    <div id="tables"></div>
-  </details>
+  <nav class="jump" id="jump"></nav>
+  <div id="centers"></div>
 </div>
 <div id="tip"></div>
 
@@ -99,21 +115,51 @@
 const DATA = __DATA__;
 const SLOTS = ['--s1','--s2','--s3','--s4'];
 const hue = i => getComputedStyle(document.documentElement).getPropertyValue(SLOTS[i % 4]).trim();
+// 강조 키워드만 색을 받고, 나머지는 회색 얇은 선으로 가라앉힌다
+function colorize(panel) {
+  let fi = 0;
+  panel.series.forEach(s => { s.color = s.focus ? hue(fi++) : 'var(--text-muted)'; });
+}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* ---------- 센터별 구역 뼈대 ---------- */
+const CI = DATA.centers.map(c => c.label);
+const accent = i => `--accent:var(--c${i % 2});--accent-bg:var(--c${i % 2}-bg)`;
+document.getElementById('jump').innerHTML = DATA.centers.map((c, i) =>
+  `<a href="#center${i}" style="${accent(i)}">${esc(c.label)}</a>`).join('');
+document.getElementById('centers').innerHTML = DATA.centers.map((c, i) => `
+  <section class="center" id="center${i}" style="${accent(i)}">
+    <div class="center-head"><h2>${esc(c.label)}</h2><span>추적 키워드 ${c.keywords}개</span></div>
+    <h3 class="sec">오늘 상태</h3>
+    <div class="tiles" id="tiles${i}"></div>
+    <h3 class="sec">추이</h3>
+    <div class="grid" id="charts${i}"></div>
+    <details>
+      <summary>표로 보기 (날짜별 전체 순위)</summary>
+      <div id="tables${i}"></div>
+    </details>
+  </section>`).join('');
+
 /* ---------- 오늘 상태 타일 ---------- */
-document.getElementById('tiles').innerHTML = DATA.today.map(t => {
+const star = f => f ? '<span class="star">★</span> ' : '';
+const tileOrder = [...DATA.today.filter(t => t.focus), ...DATA.today.filter(t => !t.focus)];
+const tileHtml = t => {
   const note = t.rank
     ? (t.delta === null ? (DATA.hasPrev ? '신규 진입' : '첫 측정')
        : t.delta === 0 ? '변동 없음'
        : t.delta > 0 ? `▲ ${t.delta}계단` : `▼ ${-t.delta}계단`)
     : (t.surface === 'place' ? '상위 5위 밖' : '미노출');
-  return `<div class="tile">
-            <div class="k">${esc(t.label)} · ${esc(t.surfaceLabel)}</div>
+  return `<div class="tile${t.focus ? ' focus' : ''}">
+            <div class="k">${star(t.focus)}${esc(t.label)}</div>
+            <div class="c">${esc(t.surfaceLabel)}</div>
             <div class="v">${t.rank ? t.rank + '위' : '—'}</div>
             <div class="d">${note}</div>
           </div>`;
-}).join('');
+};
+CI.forEach((label, i) => {
+  document.getElementById('tiles' + i).innerHTML =
+    tileOrder.filter(t => t.center === label).map(tileHtml).join('');
+});
 
 /* ---------- SVG 라인 차트 ---------- */
 const W = 660, H = 250, PL = 46, PR = 104, PT = 14, PB = 40;
@@ -153,14 +199,17 @@ function drawPanel(panel, pi) {
            stroke-width="1" opacity="0"/>`;
 
   const ends = [];
-  panel.series.forEach((s, si) => {
-    const c = hue(si);
+  colorize(panel);
+  // 회색(비강조)을 먼저 그려서 강조선이 위로 오게 한다
+  const drawOrder = [...panel.series.filter(s => !s.focus), ...panel.series.filter(s => s.focus)];
+  drawOrder.forEach(s => {
+    const c = s.color, sw = s.focus ? 2.5 : 1.2, op = s.focus ? 1 : 0.55;
     // 값이 비어 있으면 선을 끊는다
     let seg = [];
     const flush = () => {
       if (seg.length > 1) {
         svg += `<polyline points="${seg.map(p => p.join(',')).join(' ')}" fill="none"
-                 stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+                 stroke="${c}" stroke-width="${sw}" opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
       }
       seg = [];
     };
@@ -169,13 +218,14 @@ function drawPanel(panel, pi) {
 
     s.values.forEach((v, i) => {
       if (!v) return;
-      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${c}"
-               stroke="var(--surface-1)" stroke-width="2"/>`;
+      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="${s.focus ? 4.5 : 2.5}" fill="${c}" opacity="${op}"
+               stroke="var(--surface-1)" stroke-width="${s.focus ? 2 : 1}"/>`;
     });
 
-    // 직접 라벨 — 마지막으로 값이 있는 지점 기준
+    // 직접 라벨 — 강조 키워드 + 현재 순위가 있는 키워드만 (라벨이 넘치지 않게)
+    if (!s.focus && !s.values[s.values.length - 1]) return;
     for (let i = s.values.length - 1; i >= 0; i--) {
-      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: s.name, c, rank: s.values[i] }); break; }
+      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: (s.focus ? '★' : '') + s.name, c, rank: s.values[i] }); break; }
     }
   });
 
@@ -193,19 +243,24 @@ function drawPanel(panel, pi) {
   svg += `<rect id="hit${pi}" x="${PL}" y="${PT}" width="${plotW}" height="${plotH}"
            fill="transparent" style="cursor:crosshair"/></svg>`;
 
-  const legend = panel.series.map((s, si) =>
-    `<span><i style="background:${hue(si)}"></i>${esc(s.name)}</span>`).join('');
+  const rest = panel.series.filter(s => !s.focus).length;
+  const legend = panel.series.filter(s => s.focus).map(s =>
+    `<span><i style="background:${s.color}"></i><span class="star">★</span>${esc(s.name)}</span>`).join('')
+    + (rest ? `<span><i style="background:var(--text-muted)"></i>그 외 ${rest}개 키워드</span>` : '');
 
   return `<div class="card">
-            <h3>${esc(panel.title)}</h3>
+            <h3>${esc(panel.title.split(" · ").pop())}</h3>
             <p>${esc(panel.note)}</p>
             ${svg}
             <div class="legend">${legend}</div>
           </div>`;
 }
 
-document.getElementById('charts').innerHTML =
-  DATA.panels.map((p, i) => drawPanel(p, i)).join('');
+// 패널 id(pi)는 전체 기준 인덱스를 유지한다 — 툴팁이 그걸로 찾는다
+CI.forEach((label, ci) => {
+  document.getElementById('charts' + ci).innerHTML = DATA.panels
+    .map((p, pi) => p.center === label ? drawPanel(p, pi) : '').join('');
+});
 
 /* ---------- 호버 툴팁 ---------- */
 const tip = document.getElementById('tip');
@@ -225,9 +280,9 @@ DATA.panels.forEach((panel, pi) => {
     cross.setAttribute('opacity', '1');
 
     tip.innerHTML = `<b>${DATA.dates[i]} · ${esc(panel.title)}</b>` +
-      panel.series.map((s, si) => {
+      panel.series.filter(s => s.focus || s.values[i]).map(s => {
         const v = s.values[i];
-        return `<div><i style="background:${hue(si)}"></i>${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
+        return `<div><i style="background:${s.color}"></i>${s.focus ? '★' : ''}${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
       }).join('');
     tip.style.opacity = '1';
     const tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -241,17 +296,21 @@ DATA.panels.forEach((panel, pi) => {
 });
 
 /* ---------- 표로 보기 (접근성 릴리프) ---------- */
-document.getElementById('tables').innerHTML = DATA.panels.map(panel => `
+const tableHtml = panel => `
   <table>
-    <caption>${esc(panel.title)}</caption>
+    <caption>${esc(panel.title.split(" · ").pop())}</caption>
     <thead><tr><th>키워드</th>${DATA.dates.map(d => `<th class="num">${d.slice(5)}</th>`).join('')}</tr></thead>
-    <tbody>${panel.series.map((s, si) => `
-      <tr>
-        <td><span class="sw" style="background:${hue(si)}"></span>${esc(s.name)}</td>
+    <tbody>${panel.series.map(s => `
+      <tr${s.focus ? ' class="focus"' : ''}>
+        <td><span class="sw" style="background:${s.color}"></span>${star(s.focus)}${esc(s.name)}</td>
         ${s.values.map(v => `<td class="num">${v === null ? '<span class="miss">—</span>' : v + '위'}</td>`).join('')}
       </tr>`).join('')}
     </tbody>
-  </table>`).join('');
+  </table>`;
+CI.forEach((label, ci) => {
+  document.getElementById('tables' + ci).innerHTML =
+    DATA.panels.filter(p => p.center === label).map(tableHtml).join('');
+});
 </script>
 </body>
 </html>
