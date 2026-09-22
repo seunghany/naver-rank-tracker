@@ -57,11 +57,12 @@ SEL = {
     "help_close": ".se-help-panel-close-button, button.se-popup-close, "
                   "button:has-text('닫기')",
     "save_draft": "button.save_btn__bzc5B, button[class*='save_btn'], "
-                  "button:has-text('저장')",
+                  "button:has-text('저장'), button:has-text('임시 저장'), "
+                  "button[class*='save'], button[class*='draft']",
     "publish_open": "button.publish_btn__m9KHH, button[class*='publish_btn'], "
-                    "button:has-text('발행')",
+                    "button:has-text('발행'), button:has-text('게시')",
     "publish_confirm": "button.confirm_btn__WEaBq, button[class*='confirm_btn'], "
-                       "button:has-text('발행')",
+                       "button:has-text('발행'), button:has-text('확인')",
 }
 
 
@@ -159,16 +160,22 @@ def dump_debug(page, frame, tag: str) -> None:
 
     probe = SHOTS / f"debug-{tag}-{stamp}.txt"
     try:
-        info = frame.evaluate("""() => {
-            const btn = [...document.querySelectorAll('button')]
-                .filter(b => b.offsetParent)
-                .slice(0, 40)
-                .map(b => `BUTTON "${(b.innerText||'').trim().slice(0,20)}" class=${b.className}`);
-            const ed = [...document.querySelectorAll('[contenteditable="true"]')]
-                .slice(0, 20)
-                .map(e => `EDITABLE <${e.tagName.toLowerCase()}> class=${e.className}`);
-            return [...btn, ...ed].join('\n');
-        }""")
+        info = frame.evaluate("""
+        () => {
+            const btn = [];
+            for (const b of document.querySelectorAll('button')) {
+                if (!b.offsetParent) continue;
+                btn.push('BUTTON "' + ((b.innerText || '').trim().slice(0, 20)) + '" class=' + b.className);
+                if (btn.length >= 40) break;
+            }
+            const ed = [];
+            for (const e of document.querySelectorAll('[contenteditable="true"]')) {
+                ed.push('EDITABLE <' + e.tagName.toLowerCase() + '> class=' + e.className);
+                if (ed.length >= 20) break;
+            }
+            return btn.concat(ed).join('\n');
+        }
+        """)
         probe.write_text(info, encoding="utf-8")
         print(f"  후보 요소 목록: {probe}")
         print("  이 두 파일을 Claude 에게 보내면 셀렉터를 고쳐드립니다.")

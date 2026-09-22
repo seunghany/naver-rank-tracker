@@ -6,7 +6,7 @@ __pycache__/
 # 네이버 로그인 세션이 들어있는 브라우저 프로필.
 # 저장소가 Public 이므로 이게 커밋되면 세션 쿠키가 전 세계에 공개된다.
 # 절대 커밋하지 말 것.
-.naver-profile/
+.naver-profile*/
 
 # 디버그 스크린샷 (화면에 계정 정보가 찍힐 수 있음)
 content/state/debug-*.png
