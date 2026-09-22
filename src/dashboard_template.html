@@ -47,6 +47,11 @@
              white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .tile .v { font-size:1.45rem; font-weight:650; letter-spacing:-0.025em; line-height:1.1; }
   .tile .d { font-size:.7rem; color:var(--text-muted); margin-top:3px; }
+  .tile .c { font-size:.66rem; color:var(--text-muted); margin:-3px 0 5px; }
+  .tile.focus { border-color:var(--s4); box-shadow:inset 0 0 0 1px var(--s4); }
+  .tile.focus .k { color:var(--text-primary); font-weight:600; }
+  .star { color:var(--s4); }
+  tr.focus td { font-weight:600; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:16px; }
   .card { background:var(--surface-1); border:1px solid var(--border);
           border-radius:12px; padding:16px 16px 12px; }
@@ -82,6 +87,8 @@
   <h1>네이버 노출 추적</h1>
   <p class="sub">__UPDATED__ 기준 · 플레이스는 지역검색 API가 상위 5위까지만 주므로 그 밖은 측정 불가 · 블로그는 최대 __DEPTH__위까지 확인</p>
 
+  <p class="sub"><span class="star">★</span> = 회원들이 실제로 가장 많이 검색하는 키워드 (네이버 데이터랩 12개월 검색량 기준)</p>
+
   <h2>오늘 상태</h2>
   <div class="tiles" id="tiles"></div>
 
@@ -99,17 +106,25 @@
 const DATA = __DATA__;
 const SLOTS = ['--s1','--s2','--s3','--s4'];
 const hue = i => getComputedStyle(document.documentElement).getPropertyValue(SLOTS[i % 4]).trim();
+// 강조 키워드만 색을 받고, 나머지는 회색 얇은 선으로 가라앉힌다
+function colorize(panel) {
+  let fi = 0;
+  panel.series.forEach(s => { s.color = s.focus ? hue(fi++) : 'var(--text-muted)'; });
+}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ---------- 오늘 상태 타일 ---------- */
-document.getElementById('tiles').innerHTML = DATA.today.map(t => {
+const star = f => f ? '<span class="star">★</span> ' : '';
+const tileOrder = [...DATA.today.filter(t => t.focus), ...DATA.today.filter(t => !t.focus)];
+document.getElementById('tiles').innerHTML = tileOrder.map(t => {
   const note = t.rank
     ? (t.delta === null ? (DATA.hasPrev ? '신규 진입' : '첫 측정')
        : t.delta === 0 ? '변동 없음'
        : t.delta > 0 ? `▲ ${t.delta}계단` : `▼ ${-t.delta}계단`)
     : (t.surface === 'place' ? '상위 5위 밖' : '미노출');
-  return `<div class="tile">
-            <div class="k">${esc(t.label)} · ${esc(t.surfaceLabel)}</div>
+  return `<div class="tile${t.focus ? ' focus' : ''}">
+            <div class="k">${star(t.focus)}${esc(t.label)}</div>
+            <div class="c">${esc(t.center)} · ${esc(t.surfaceLabel)}</div>
             <div class="v">${t.rank ? t.rank + '위' : '—'}</div>
             <div class="d">${note}</div>
           </div>`;
@@ -153,14 +168,17 @@ function drawPanel(panel, pi) {
            stroke-width="1" opacity="0"/>`;
 
   const ends = [];
-  panel.series.forEach((s, si) => {
-    const c = hue(si);
+  colorize(panel);
+  // 회색(비강조)을 먼저 그려서 강조선이 위로 오게 한다
+  const drawOrder = [...panel.series.filter(s => !s.focus), ...panel.series.filter(s => s.focus)];
+  drawOrder.forEach(s => {
+    const c = s.color, sw = s.focus ? 2.5 : 1.2, op = s.focus ? 1 : 0.55;
     // 값이 비어 있으면 선을 끊는다
     let seg = [];
     const flush = () => {
       if (seg.length > 1) {
         svg += `<polyline points="${seg.map(p => p.join(',')).join(' ')}" fill="none"
-                 stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+                 stroke="${c}" stroke-width="${sw}" opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
       }
       seg = [];
     };
@@ -169,13 +187,14 @@ function drawPanel(panel, pi) {
 
     s.values.forEach((v, i) => {
       if (!v) return;
-      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${c}"
-               stroke="var(--surface-1)" stroke-width="2"/>`;
+      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="${s.focus ? 4.5 : 2.5}" fill="${c}" opacity="${op}"
+               stroke="var(--surface-1)" stroke-width="${s.focus ? 2 : 1}"/>`;
     });
 
-    // 직접 라벨 — 마지막으로 값이 있는 지점 기준
+    // 직접 라벨 — 강조 키워드 + 현재 순위가 있는 키워드만 (라벨이 넘치지 않게)
+    if (!s.focus && !s.values[s.values.length - 1]) return;
     for (let i = s.values.length - 1; i >= 0; i--) {
-      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: s.name, c, rank: s.values[i] }); break; }
+      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: (s.focus ? '★' : '') + s.name, c, rank: s.values[i] }); break; }
     }
   });
 
@@ -193,8 +212,10 @@ function drawPanel(panel, pi) {
   svg += `<rect id="hit${pi}" x="${PL}" y="${PT}" width="${plotW}" height="${plotH}"
            fill="transparent" style="cursor:crosshair"/></svg>`;
 
-  const legend = panel.series.map((s, si) =>
-    `<span><i style="background:${hue(si)}"></i>${esc(s.name)}</span>`).join('');
+  const rest = panel.series.filter(s => !s.focus).length;
+  const legend = panel.series.filter(s => s.focus).map(s =>
+    `<span><i style="background:${s.color}"></i><span class="star">★</span>${esc(s.name)}</span>`).join('')
+    + (rest ? `<span><i style="background:var(--text-muted)"></i>그 외 ${rest}개 키워드</span>` : '');
 
   return `<div class="card">
             <h3>${esc(panel.title)}</h3>
@@ -225,9 +246,9 @@ DATA.panels.forEach((panel, pi) => {
     cross.setAttribute('opacity', '1');
 
     tip.innerHTML = `<b>${DATA.dates[i]} · ${esc(panel.title)}</b>` +
-      panel.series.map((s, si) => {
+      panel.series.filter(s => s.focus || s.values[i]).map(s => {
         const v = s.values[i];
-        return `<div><i style="background:${hue(si)}"></i>${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
+        return `<div><i style="background:${s.color}"></i>${s.focus ? '★' : ''}${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
       }).join('');
     tip.style.opacity = '1';
     const tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -245,9 +266,9 @@ document.getElementById('tables').innerHTML = DATA.panels.map(panel => `
   <table>
     <caption>${esc(panel.title)}</caption>
     <thead><tr><th>키워드</th>${DATA.dates.map(d => `<th class="num">${d.slice(5)}</th>`).join('')}</tr></thead>
-    <tbody>${panel.series.map((s, si) => `
-      <tr>
-        <td><span class="sw" style="background:${hue(si)}"></span>${esc(s.name)}</td>
+    <tbody>${panel.series.map(s => `
+      <tr${s.focus ? ' class="focus"' : ''}>
+        <td><span class="sw" style="background:${s.color}"></span>${star(s.focus)}${esc(s.name)}</td>
         ${s.values.map(v => `<td class="num">${v === null ? '<span class="miss">—</span>' : v + '위'}</td>`).join('')}
       </tr>`).join('')}
     </tbody>

@@ -28,6 +28,8 @@ def build() -> None:
     cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
     labels = {c["name"]: c.get("label", c["name"]) for c in cfg["centers"]}
     order = {c["name"]: c["keywords"] for c in cfg["centers"]}
+    # 회원들이 실제로 가장 많이 검색하는 키워드 — 대시보드에서 ★로 강조
+    focus = {c["name"]: set(c.get("focus_keywords") or []) for c in cfg["centers"]}
 
     rows = list(csv.DictReader(CSV_PATH.open(encoding="utf-8")))
     dates = sorted({r["date"] for r in rows})
@@ -57,12 +59,14 @@ def build() -> None:
                 by_date = lookup.get((center, surface, kw), {})
                 values = [by_date.get(d) for d in dates]
                 observed += [v for v in values if v]
-                series.append({"name": kw, "values": values})
+                is_focus = kw in focus[center]
+                series.append({"name": kw, "values": values, "focus": is_focus})
                 now = by_date.get(last)
                 before = by_date.get(prev) if prev else None
                 tiles.append({
                     "center": labels[center], "label": kw,
                     "surface": surface, "surfaceLabel": s_label,
+                    "focus": is_focus,
                     "rank": now,
                     "delta": (before - now) if (now and before) else None,
                 })
