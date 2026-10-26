@@ -5,7 +5,6 @@ GitHub Pages 대시보드로 보여준다. 서버비 0원, GitHub Actions만 사
 
 - **플레이스**: 지역검색 API로 상위 5위 안에서의 위치 (API가 5개까지만 준다 — 그 밖은 측정 불가)
 - **블로그**: 블로그 검색 API로 우리 글의 실제 순위 (100개씩 페이지를 넘겨 최대 300위까지)
-- **키워드 발굴**: 검색광고 키워드도구 API로 절대 월간 검색수 (선택, 키가 있어야 동작)
 
 ---
 
@@ -14,7 +13,7 @@ GitHub Pages 대시보드로 보여준다. 서버비 0원, GitHub Actions만 사
 ### 1. 저장소 만들기
 
 ```bash
-gh repo create naver-rank-tracker --private --source=. --remote=origin
+gh repo create naver-rank-tracker --public --source=. --remote=origin   # 무료 플랜의 Pages는 공개 저장소에서만
 git add . && git commit -m "init"
 git push -u origin main
 ```
@@ -82,21 +81,6 @@ export NCP_API_KEY_ID=... NCP_API_KEY=...   # 또는 NAVER_CLIENT_ID / NAVER_CLI
 python src/track.py            # data/rankings.csv 에 append
 python src/build_dashboard.py  # docs/index.html 생성
 ```
-
-## 키워드 발굴 (2단계)
-
-검색광고 API는 **NCP와 무관한 별개 시스템**이라 이관 영향이 없다. 키가 생기면:
-
-```bash
-export NAVER_AD_API_KEY=... NAVER_AD_SECRET_KEY=... NAVER_AD_CUSTOMER_ID=...
-python src/keywordtool.py 하이록스 크로스핏 철산 광교
-# → data/keywords_YYYY-MM-DD.csv (월간 검색수 내림차순)
-```
-
-키 발급: 네이버 검색광고 → 도구 → **API 관리** → 액세스 라이선스 / 비밀키 발급.
-CUSTOMER_ID는 같은 화면 상단의 고객 ID.
-
----
 
 ## 데이터 형식 — `data/rankings.csv`
 
