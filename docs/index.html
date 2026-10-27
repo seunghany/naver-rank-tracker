@@ -9,8 +9,10 @@
     color-scheme: light;
     --surface-0:#f6f6f4; --surface-1:#fcfcfb; --border:#e3e2dd;
     --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#8a8981;
-    --grid:#eceae5;
-    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --grid:#eceae5; --axis:#c3c2b7;
+    /* 범주형 6색 — 고정 순서 (validate_palette.js 통과: 인접 CVD ΔE 9.1 / 일반 19.6) */
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+    --up:#006300; --down:#c62f2f;
     --c0:#4f46e5; --c0-bg:#eef0fd; --c1:#0f8f7e; --c1-bg:#e8f6f3;
   }
   @media (prefers-color-scheme: dark) {
@@ -18,8 +20,9 @@
       color-scheme: dark;
       --surface-0:#111110; --surface-1:#1a1a19; --border:#33332f;
       --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
-      --grid:#2a2a27;
-      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --grid:#2a2a27; --axis:#383835;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+      --up:#2fbf2f; --down:#ee7272;
       --c0:#8b85ff; --c0-bg:#1b1a2e; --c1:#2fc2ad; --c1-bg:#132522;
     }
   }
@@ -27,8 +30,9 @@
     color-scheme: dark;
     --surface-0:#111110; --surface-1:#1a1a19; --border:#33332f;
     --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e86;
-    --grid:#2a2a27;
-    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --grid:#2a2a27; --axis:#383835;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+    --up:#2fbf2f; --down:#ee7272;
     --c0:#8b85ff; --c0-bg:#1b1a2e; --c1:#2fc2ad; --c1-bg:#132522;
   }
   * { box-sizing:border-box; }
@@ -39,278 +43,485 @@
     -webkit-font-smoothing:antialiased;
   }
   .wrap { max-width:1060px; margin:0 auto; }
-  h1 { font-size:1.35rem; margin:0 0 5px; letter-spacing:-0.015em; }
-  .sub { color:var(--text-secondary); font-size:.82rem; margin:0 0 30px; line-height:1.5; }
-  h2 { font-size:.78rem; margin:34px 0 12px; letter-spacing:.06em;
-       text-transform:uppercase; color:var(--text-secondary); font-weight:600; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:9px; }
-  .tile { background:var(--surface-1); border:1px solid var(--border);
-          border-radius:10px; padding:11px 13px; }
-  .tile .k { font-size:.72rem; color:var(--text-secondary); margin-bottom:5px;
-             white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tile .v { font-size:1.45rem; font-weight:650; letter-spacing:-0.025em; line-height:1.1; }
-  .tile .d { font-size:.7rem; color:var(--text-muted); margin-top:3px; }
-  .tile .c { font-size:.66rem; color:var(--text-muted); margin:-3px 0 5px; }
-  .tile.focus { border-color:var(--s4); box-shadow:inset 0 0 0 1px var(--s4); }
-  .tile.focus .k { color:var(--text-primary); font-weight:600; }
+  h1 { font-size:1.35rem; margin:0 0 6px; letter-spacing:-0.015em; }
+  .sub { color:var(--text-secondary); font-size:.82rem; margin:0 0 6px; line-height:1.55; }
+  .sub.last { margin-bottom:22px; }
   .star { color:var(--s4); }
-  tr.focus td { font-weight:600; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:16px; }
-  .card { background:var(--surface-1); border:1px solid var(--border);
-          border-radius:12px; padding:16px 16px 12px; }
-  .card h3 { margin:0 0 3px; font-size:.9rem; letter-spacing:-0.01em; }
-  .card p { margin:0 0 6px; font-size:.73rem; color:var(--text-muted); line-height:1.45; }
-  .card svg { display:block; width:100%; height:auto; overflow:visible; }
-  .legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:8px;
-            font-size:.73rem; color:var(--text-secondary); }
-  .legend span { display:inline-flex; align-items:center; gap:6px; }
-  .legend i { width:9px; height:9px; border-radius:2px; display:inline-block; }
-  table { width:100%; border-collapse:collapse; font-size:.78rem; margin:6px 0 22px; }
-  caption { text-align:left; font-size:.8rem; font-weight:600; padding:10px 0 6px; }
-  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--border); }
-  th { color:var(--text-secondary); font-weight:550; font-size:.72rem; }
-  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px;
-        vertical-align:baseline; }
-  details { margin-top:18px; }
-  summary { cursor:pointer; font-size:.8rem; color:var(--text-secondary); padding:6px 0; }
-  .miss { color:var(--text-muted); }
-  #tip { position:fixed; pointer-events:none; opacity:0; transition:opacity .1s;
-         background:var(--surface-0); border:1px solid var(--border); border-radius:8px;
-         padding:8px 10px; font-size:.75rem; color:var(--text-secondary);
-         box-shadow:0 4px 16px rgba(0,0,0,.14); z-index:9; max-width:230px; }
-  #tip b { color:var(--text-primary); display:block; margin-bottom:4px; font-size:.76rem; }
-  #tip div { display:flex; align-items:center; gap:6px; line-height:1.55; }
-  #tip i { width:8px; height:8px; border-radius:2px; flex:none; }
+  .muted, .miss { color:var(--text-muted); }
+  .up { color:var(--up); font-weight:600; }
+  .down { color:var(--down); font-weight:600; }
+  .tag { display:inline-block; font-size:.66rem; font-weight:600; padding:1px 6px; border-radius:999px;
+         border:1px solid var(--border); color:var(--text-secondary); vertical-align:1px; white-space:nowrap; }
+
+  .reports { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 14px; font-size:.82rem; }
+  .reports span { color:var(--text-secondary); }
+  .reports a { text-decoration:none; font-weight:600; padding:6px 12px; border-radius:8px;
+               color:var(--text-primary); background:var(--surface-1); border:1px solid var(--border); }
   .jump { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
   .jump a { text-decoration:none; font-size:.8rem; font-weight:600; padding:6px 12px;
             border-radius:999px; color:var(--accent); background:var(--accent-bg);
             border:1px solid var(--accent); }
-  .center { margin-top:36px; padding:20px 18px 8px; border-radius:16px;
+
+  .center { margin-top:30px; padding:20px 18px 12px; border-radius:16px;
             background:var(--accent-bg); border:1px solid var(--border);
             border-top:5px solid var(--accent); scroll-margin-top:12px; }
   .center-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .center-head h2 { margin:0; font-size:1.15rem; letter-spacing:-0.01em;
-                    text-transform:none; color:var(--accent); font-weight:700; }
+  .center-head h2 { margin:0; font-size:1.15rem; letter-spacing:-0.01em; color:var(--accent); font-weight:700; }
   .center-head span { font-size:.76rem; color:var(--text-muted); }
-  .center h3.sec { font-size:.74rem; margin:22px 0 10px; letter-spacing:.06em;
-                   color:var(--text-secondary); font-weight:600; }
-  @media (max-width:520px){ .center{padding:16px 10px 6px;} }
-  @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
+  .center h3.sec { font-size:.78rem; margin:24px 0 10px; letter-spacing:.04em;
+                   color:var(--text-secondary); font-weight:650; }
+  .box { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+
+  /* 오늘 요약 */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:9px; }
+  .kpi { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .kpi .k { font-size:.74rem; color:var(--text-secondary); }
+  .kpi .v { font-size:1.6rem; font-weight:700; letter-spacing:-0.02em; margin-top:2px; }
+  .kpi .v small { font-size:.85rem; font-weight:500; color:var(--text-muted); }
+  .kpi .d { font-size:.72rem; color:var(--text-muted); margin-top:2px; }
+  .kpi.core { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+  .kpi .v { white-space:nowrap; }
+  .kpi .spark { margin:4px 0 2px; }
+  .spark { display:block; flex:none; }
+  .core-mark { color:var(--accent); }
+
+  /* 경쟁 구도 */
+  .board td.name { white-space:nowrap; max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  .board tr.ours td { font-weight:650; background:var(--accent-bg); }
+  .board .bars { display:block; }
+  .insight { font-size:.8rem; line-height:1.6; color:var(--text-secondary); margin:0 0 10px; }
+  .insight b { color:var(--text-primary); }
+  .kt td.trend { width:90px; }
+  @media (max-width:640px){ .kt td.trend, .kt th.trend { display:none; } }
+
+  /* 변동 */
+  .moves { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:9px; }
+  .moves h4, .box h4 { margin:0 0 8px; font-size:.8rem; font-weight:650; }
+  .moves ul, .box ul { list-style:none; margin:0; padding:0; font-size:.8rem; line-height:1.5; }
+  .moves li, .box li { padding:3px 0; border-top:1px solid var(--grid); }
+  .moves li:first-child, .box li:first-child { border-top:0; }
+  .moves .sf { font-size:.7rem; color:var(--text-muted); }
+  .moves details summary { font-size:.74rem; color:var(--text-secondary); cursor:pointer; padding-top:4px; }
+  .lists { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:9px; margin-top:9px; }
+  .box a { color:var(--text-primary); }
+  .box .meta { display:block; font-size:.72rem; color:var(--text-muted); }
+  .empty { font-size:.78rem; color:var(--text-muted); }
+
+  /* 키워드별 순위 표 */
+  .kt-wrap { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; font-size:.8rem; }
+  th, td { text-align:left; padding:7px 12px; border-bottom:1px solid var(--grid); }
+  th { color:var(--text-secondary); font-weight:600; font-size:.72rem; background:var(--surface-1); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .kt td.kw { white-space:nowrap; }
+  .kt tr.focus td.kw { font-weight:650; }
+  .kt tr.grp td { background:var(--surface-0); color:var(--text-secondary); font-size:.72rem;
+                  font-weight:650; padding:6px 12px; }
+  .kt td.post { color:var(--text-muted); max-width:340px; overflow:hidden; text-overflow:ellipsis;
+                white-space:nowrap; font-size:.74rem; }
+  .kt .delta { font-size:.7rem; margin-left:4px; }
+  @media (max-width:640px){ .kt .post { display:none; } th, td { padding:7px 8px; } }
+
+  /* 추이 차트 */
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:14px; }
+  .card { background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px 16px 12px; }
+  .card h4 { margin:0 0 3px; font-size:.9rem; letter-spacing:-0.01em; }
+  .card p { margin:0 0 6px; font-size:.73rem; color:var(--text-muted); line-height:1.45; }
+  .card svg { display:block; width:100%; height:auto; overflow:visible; touch-action:pan-y; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; font-size:.73rem; color:var(--text-secondary); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .legend i.hollow { background:transparent !important; border:1.5px solid; }
+  .foot { font-size:.72rem; color:var(--text-muted); margin:8px 2px 0; line-height:1.5; }
+
+  /* 표로 보기 */
+  details.raw { margin-top:16px; }
+  details.raw > summary { cursor:pointer; font-size:.8rem; color:var(--text-secondary); padding:6px 0; }
+  .tscroll { overflow-x:auto; background:var(--surface-1); border:1px solid var(--border);
+             border-radius:12px; margin:8px 0 14px; }
+  .tscroll caption { text-align:left; font-size:.8rem; font-weight:650; padding:10px 12px 4px; }
+  .tscroll th, .tscroll td { white-space:nowrap; padding:6px 10px; }
+  .tscroll th:first-child, .tscroll td:first-child { position:sticky; left:0; background:var(--surface-1);
+             box-shadow:1px 0 0 var(--border); }
+  .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:7px; vertical-align:baseline; }
+
+  #tip { position:fixed; pointer-events:none; opacity:0; transition:opacity .1s;
+         background:var(--surface-0); border:1px solid var(--border); border-radius:8px;
+         padding:8px 10px; font-size:.75rem; color:var(--text-secondary);
+         box-shadow:0 4px 16px rgba(0,0,0,.14); z-index:9; max-width:250px; }
+  #tip b { color:var(--text-primary); display:block; margin-bottom:4px; font-size:.76rem; }
+  #tip div { display:flex; align-items:center; gap:6px; line-height:1.55; }
+  #tip i { width:8px; height:8px; border-radius:2px; flex:none; }
+  @media (max-width:520px){ .center{padding:16px 10px 8px;} .grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>네이버 노출 추적</h1>
-  <p class="sub">2026-10-27 기준 · 플레이스는 지역검색 API가 상위 5위까지만 주므로 그 밖은 측정 불가 · 블로그는 최대 300위까지 확인</p>
+  <p class="sub" id="asof"></p>
+  <p class="sub">플레이스는 네이버가 상위 5곳까지만 알려 줘서 그 밖은 '5위 밖'으로만 보입니다 ·
+     블로그는 서로 다른 글 약 <span id="depth"></span>개까지 확인합니다 ·
+     순위는 검색 API 기준이라 네이버 앱 화면과 조금 다를 수 있습니다</p>
+  <p class="sub last"><span class="core-mark" style="--accent:var(--c0)">◆</span> = 센터 핵심 키워드 (우리 수업과 바로 이어지고 블로그로 집중 공략 중) ·
+     <span class="star">★</span> = 회원들이 실제로 가장 많이 검색하는 키워드 (네이버 데이터랩 12개월 검색량 기준)</p>
 
-  <p class="sub"><span class="star">★</span> = 회원들이 실제로 가장 많이 검색하는 키워드 (네이버 데이터랩 12개월 검색량 기준)</p>
-
+  <nav class="reports"><span>센터별 보고서</span><a href="reports/Reboot.html">리부트(철산) →</a><a href="reports/TeamPoise.html">팀포이즈(광교) →</a></nav>
   <nav class="jump" id="jump"></nav>
   <div id="centers"></div>
 </div>
 <div id="tip"></div>
 
 <script>
-const DATA = {"dates": ["2026-09-18", "2026-09-19", "2026-09-20", "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25", "2026-09-26", "2026-09-27", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27"], "centers": [{"label": "리부트(철산)", "keywords": 21}, {"label": "팀포이즈(광교)", "keywords": 17}], "panels": [{"center": "리부트(철산)", "title": "리부트(철산) · 플레이스", "note": "지역검색 상위 5위 안에서의 위치. 5위 밖은 끊어져 보인다.", "max": 5, "series": [{"name": "철산헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "광명헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "철산역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "철산PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "철산헬스", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광명크로스핏", "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산동헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광명PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산크로스핏", "values": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, null, null, null, 4], "focus": false}, {"name": "철산역PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산역 헬스", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산하이록스", "values": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2], "focus": false}, {"name": "광명하이록스", "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1], "focus": false}, {"name": "철산그룹PT", "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], "focus": false}, {"name": "철산역 크로스핏", "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, null, null, null, 4], "focus": false}, {"name": "철산역 운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산역 하이록스", "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2], "focus": false}, {"name": "철산역 그룹피티", "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], "focus": false}, {"name": "철산팀트레이닝", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광명그룹PT", "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1], "focus": false}, {"name": "광명그룹운동", "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], "focus": false}]}, {"center": "리부트(철산)", "title": "리부트(철산) · 블로그", "note": "블로그 검색에서 우리 글의 실제 순위. 최대 300위까지 확인.", "max": 216, "series": [{"name": "철산헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 34, 35, 40, 39, 40, 37, 37, 43, 41, 45, 31, 31, 32], "focus": true}, {"name": "광명헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 49, 81, 91, 90, 80, 95, 77, 33, 31, 31, 31, 31, 31], "focus": true}, {"name": "철산역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 2, 6, 31, 29, 31, 29, 38, 38, 36, 36, 31, 31, 31], "focus": true}, {"name": "철산PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 24, 43, 45, 45, 42, 3, 2, 1, 2, 5, 23, 24, 22], "focus": true}, {"name": "철산헬스", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 216, 36, 36, 42, 47, 42, 21, 18, 19, 17, 17, 31, 31, 32], "focus": false}, {"name": "광명크로스핏", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 59, 64, 61, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "철산동헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광명PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "철산크로스핏", "values": [57, 57, 56, 57, 57, 57, 57, 57, 57, 57, 57, 57, 58, 57, 58, 59, 59, 58, 57, 57, 57, 56, 57, 57, 5, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 1, 2], "focus": false}, {"name": "철산역PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 3, null, null, null, null, null, null, null], "focus": false}, {"name": "철산역 헬스", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 17, 24, 43, 41, 41, 42, 43, 46, 41, 38, 31, 32, 32], "focus": false}, {"name": "철산하이록스", "values": [27, 29, 29, 30, 31, 31, 32, 32, 32, 32, 33, 12, 3, 2, 3, 3, 6, 6, 2, 3, 4, 3, 4, 4, 2, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2], "focus": false}, {"name": "광명하이록스", "values": [null, null, null, null, null, 81, 82, 82, 82, 82, 82, 83, 3, 4, 8, 5, 2, 9, 8, 9, 2, 11, 3, 3, 31, 1, 8, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "철산그룹PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 60, 68, 69, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "철산역 크로스핏", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 43, 44, 44, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "철산역 운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 39, 36, 35, 36, 37, 45, 48, 55, 54, 44, 31, 31, 31], "focus": false}, {"name": "철산역 하이록스", "values": [null, null, null, null, null, 27, 27, 23, 27, 27, 27, 23, 23, 26, 21, 22, 17, 24, 18, 16, 16, 16, 17, 17, 3, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1], "focus": false}, {"name": "철산역 그룹피티", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 6, 5, 7, 6, 3, 2, 2, 3, 4, 4, 5, 4, 4], "focus": false}, {"name": "철산팀트레이닝", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "광명그룹PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 2, 3, 3, 3, 3, 1, 1, 1, 2, 1, 1, 1, 1], "focus": false}, {"name": "광명그룹운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 4, 16, 10, 8, 14, 17, 31, 8, 7, 6, 3, 6, 5], "focus": false}]}, {"center": "팀포이즈(광교)", "title": "팀포이즈(광교) · 플레이스", "note": "지역검색 상위 5위 안에서의 위치. 5위 밖은 끊어져 보인다.", "max": 5, "series": [{"name": "광교헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "광교PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "상현역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 5, null, null, null, null, null, null, null, null, null, null, null, 5, null, null, null, null, null, null, null, null, 5, 4, 4, 4, 4, 4], "focus": true}, {"name": "상현동헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": true}, {"name": "수지헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광교크로스핏", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광교중앙역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "상현역PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "수지PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "수지크로스핏", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광교하이록스", "values": [null, null, null, null, null, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 5, 5, 5, 5], "focus": false}, {"name": "상현헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "광교그룹운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}, {"name": "상현그룹 PT", "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현그룹 트레이닝", "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현 하이록스", "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현 운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], "focus": false}]}, {"center": "팀포이즈(광교)", "title": "팀포이즈(광교) · 블로그", "note": "블로그 검색에서 우리 글의 실제 순위. 최대 300위까지 확인.", "max": 262, "series": [{"name": "광교헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 16, 33, 33, 35, 34, 20, 14, 10, 9, 7, 2, 87, 94], "focus": true}, {"name": "광교PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 32, 32, 32, 33, 41, 33, 33, 31, 31, 31, 31, 31, 31], "focus": true}, {"name": "상현역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 2, 32, 31, 40, 43, 2, 12, 4, 28], "focus": true}, {"name": "상현동헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 43, 63, 63, 66, 66, 88, 80, 31, 31, 31, 31, 31, 31], "focus": true}, {"name": "수지헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 73, 28, 28, 26, 30, 31, 4, 10, 12, 13, 11, 15, 15], "focus": false}, {"name": "광교크로스핏", "values": [null, null, 127, 116, 112, null, 127, 127, 131, 126, 126, 126, 130, 122, 125, 125, 123, 124, 124, 123, 120, 121, 114, 113, 122, 120, 102, 20, 22, 25, 19, 5, 39, 35, 24, 25, 27, 31, 31, 5], "focus": false}, {"name": "광교중앙역헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 3, 2, 2], "focus": false}, {"name": "상현역PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 262, null, 243, null, null, 234, null, null, null, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2], "focus": false}, {"name": "수지PT", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 2, 24, 1, 1, 1, 21, 31, 31, 32, 33, 34, 34, 34], "focus": false}, {"name": "수지크로스핏", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 3, 2, 1, 1, 3, 2, 1, 1, 1, 2, 3], "focus": false}, {"name": "광교하이록스", "values": [null, null, null, null, null, 17, 222, 15, 207, 17, 17, 17, 208, 13, 16, 27, 16, 23, 16, 17, 16, 28, 21, 209, 47, 45, 47, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현헬스장", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 32, 32, 25, 28, 32, 32, 32, 9, 10, 8, 8, 6, 10], "focus": false}, {"name": "광교그룹운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현그룹 PT", "values": [null, null, null, null, null, 26, null, null, 18, 216, null, 22, 216, 19, 213, 16, 15, 208, 13, 15, 26, 28, 10, 16, 27, 24, 31, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현그룹 트레이닝", "values": [null, null, null, null, null, 1, 1, 1, 2, 2, 2, 1, 111, 108, 123, 126, 124, 126, 108, 122, 121, 122, 107, 231, 80, 2, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현 하이록스", "values": [null, null, null, null, null, 5, 5, 5, 5, 5, 5, 5, 9, 5, 5, 5, 5, 5, 5, 4, 4, 5, 4, 4, 3, 3, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "focus": false}, {"name": "상현 운동", "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 24, 23, 24, 31, 29, 31, 28, 12, 34, 34, 2, 1, 5], "focus": false}]}], "today": [{"center": "리부트(철산)", "label": "철산헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산역헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산PT", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산헬스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명크로스핏", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산동헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산크로스핏", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 4, "delta": null}, {"center": "리부트(철산)", "label": "철산역PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산역 헬스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산하이록스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 2, "delta": 1}, {"center": "리부트(철산)", "label": "광명하이록스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "철산그룹PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 3, "delta": 0}, {"center": "리부트(철산)", "label": "철산역 크로스핏", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 4, "delta": null}, {"center": "리부트(철산)", "label": "철산역 운동", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산역 하이록스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 2, "delta": 1}, {"center": "리부트(철산)", "label": "철산역 그룹피티", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 2, "delta": 0}, {"center": "리부트(철산)", "label": "철산팀트레이닝", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명그룹PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 1, "delta": 1}, {"center": "리부트(철산)", "label": "광명그룹운동", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 2, "delta": 0}, {"center": "리부트(철산)", "label": "철산헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 32, "delta": -1}, {"center": "리부트(철산)", "label": "광명헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 31, "delta": 0}, {"center": "리부트(철산)", "label": "철산역헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 31, "delta": 0}, {"center": "리부트(철산)", "label": "철산PT", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 22, "delta": 2}, {"center": "리부트(철산)", "label": "철산헬스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 32, "delta": -1}, {"center": "리부트(철산)", "label": "광명크로스핏", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "철산동헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "광명PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산크로스핏", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 2, "delta": -1}, {"center": "리부트(철산)", "label": "철산역PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": null, "delta": null}, {"center": "리부트(철산)", "label": "철산역 헬스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 32, "delta": 0}, {"center": "리부트(철산)", "label": "철산하이록스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 2, "delta": -1}, {"center": "리부트(철산)", "label": "광명하이록스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "철산그룹PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "철산역 크로스핏", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "철산역 운동", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 31, "delta": 0}, {"center": "리부트(철산)", "label": "철산역 하이록스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 1}, {"center": "리부트(철산)", "label": "철산역 그룹피티", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 4, "delta": 0}, {"center": "리부트(철산)", "label": "철산팀트레이닝", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "광명그룹PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "리부트(철산)", "label": "광명그룹운동", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 5, "delta": 1}, {"center": "팀포이즈(광교)", "label": "광교헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교PT", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "상현역헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": 4, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현동헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": true, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "수지헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교크로스핏", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교중앙역헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "상현역PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "수지PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "수지크로스핏", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교하이록스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 5, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현헬스장", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교그룹운동", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "상현그룹 PT", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현그룹 트레이닝", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현 하이록스", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현 운동", "surface": "place", "surfaceLabel": "플레이스", "focus": false, "rank": null, "delta": null}, {"center": "팀포이즈(광교)", "label": "광교헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 94, "delta": -7}, {"center": "팀포이즈(광교)", "label": "광교PT", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 31, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현역헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 28, "delta": -24}, {"center": "팀포이즈(광교)", "label": "상현동헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": true, "rank": 31, "delta": 0}, {"center": "팀포이즈(광교)", "label": "수지헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 15, "delta": 0}, {"center": "팀포이즈(광교)", "label": "광교크로스핏", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 5, "delta": 26}, {"center": "팀포이즈(광교)", "label": "광교중앙역헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 2, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현역PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 2, "delta": 0}, {"center": "팀포이즈(광교)", "label": "수지PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 34, "delta": 0}, {"center": "팀포이즈(광교)", "label": "수지크로스핏", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 3, "delta": -1}, {"center": "팀포이즈(광교)", "label": "광교하이록스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현헬스장", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 10, "delta": -4}, {"center": "팀포이즈(광교)", "label": "광교그룹운동", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현그룹 PT", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현그룹 트레이닝", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현 하이록스", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 1, "delta": 0}, {"center": "팀포이즈(광교)", "label": "상현 운동", "surface": "blog", "surfaceLabel": "블로그", "focus": false, "rank": 5, "delta": -4}], "hasPrev": true};
-const SLOTS = ['--s1','--s2','--s3','--s4'];
-const hue = i => getComputedStyle(document.documentElement).getPropertyValue(SLOTS[i % 4]).trim();
-// 강조 키워드만 색을 받고, 나머지는 회색 얇은 선으로 가라앉힌다
-function colorize(panel) {
-  let fi = 0;
-  panel.series.forEach(s => { s.color = s.focus ? hue(fi++) : 'var(--text-muted)'; });
-}
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DATA = {"dates": ["2026-09-18", "2026-09-19", "2026-09-20", "2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24", "2026-09-27", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-11", "2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26"], "days": [0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38], "last": "2026-10-26", "prev": "2026-10-25", "missing": ["2026-09-25", "2026-09-26", "2026-10-09", "2026-10-10", "2026-10-12", "2026-10-21"], "marks": [{"date": "2026-10-03", "label": "확인 범위 확대 (약 382개)"}, {"date": "2026-10-14", "label": "확인 범위 확대 (약 925개)"}], "depth": 1000, "centers": [{"name": "Reboot", "label": "리부트(철산)", "counts": {"local": 21, "needs": 9, "brand": 1}, "coreCounts": {"local": 6, "all": 8}, "kpi": {"now": {"corePlaceTop5": 3, "coreBlogTop10": 6, "placeTop5": 7, "blogSeen": 23, "blogFirst": 7, "blogTop10": 12}, "prev": {"corePlaceTop5": 3, "coreBlogTop10": 7, "placeTop5": 7, "blogSeen": 23, "blogFirst": 8, "blogTop10": 13}, "hist": [{"corePlaceTop5": 4, "coreBlogTop10": 3, "placeTop5": 9, "blogSeen": 11, "blogFirst": 1, "blogTop10": 4}, {"corePlaceTop5": 4, "coreBlogTop10": 4, "placeTop5": 9, "blogSeen": 14, "blogFirst": 2, "blogTop10": 5}, {"corePlaceTop5": 4, "coreBlogTop10": 7, "placeTop5": 9, "blogSeen": 22, "blogFirst": 8, "blogTop10": 14}, {"corePlaceTop5": 4, "coreBlogTop10": 6, "placeTop5": 9, "blogSeen": 22, "blogFirst": 8, "blogTop10": 12}, {"corePlaceTop5": 4, "coreBlogTop10": 6, "placeTop5": 9, "blogSeen": 22, "blogFirst": 8, "blogTop10": 11}, {"corePlaceTop5": 4, "coreBlogTop10": 6, "placeTop5": 9, "blogSeen": 22, "blogFirst": 8, "blogTop10": 11}, {"corePlaceTop5": 4, "coreBlogTop10": 6, "placeTop5": 9, "blogSeen": 22, "blogFirst": 8, "blogTop10": 10}, {"corePlaceTop5": 4, "coreBlogTop10": 6, "placeTop5": 9, "blogSeen": 23, "blogFirst": 10, "blogTop10": 12}, {"corePlaceTop5": 4, "coreBlogTop10": 7, "placeTop5": 9, "blogSeen": 24, "blogFirst": 10, "blogTop10": 13}, {"corePlaceTop5": 4, "coreBlogTop10": 7, "placeTop5": 9, "blogSeen": 22, "blogFirst": 10, "blogTop10": 13}, {"corePlaceTop5": 4, "coreBlogTop10": 8, "placeTop5": 9, "blogSeen": 23, "blogFirst": 8, "blogTop10": 14}, {"corePlaceTop5": 3, "coreBlogTop10": 8, "placeTop5": 7, "blogSeen": 23, "blogFirst": 9, "blogTop10": 14}, {"corePlaceTop5": 3, "coreBlogTop10": 7, "placeTop5": 7, "blogSeen": 23, "blogFirst": 8, "blogTop10": 13}, {"corePlaceTop5": 3, "coreBlogTop10": 6, "placeTop5": 7, "blogSeen": 23, "blogFirst": 7, "blogTop10": 12}]}, "table": [{"kw": "철산PT", "group": "core", "core": true, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 24, "prev": 24, "delta": 0, "measured": true, "title": "[철산PT] 철산 웨이트 수업, 화·목 끝나고 하는 짧은 와드는 뭘까?", "otherPost": true}}, {"kw": "광명크로스핏", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광명크로스핏] 크로스핏 손바닥 물집, 굳은살이 찢어지면 어떻게 ....", "otherPost": false}}, {"kw": "철산크로스핏", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 2, "prev": 5, "delta": 3, "measured": true, "title": "철산역 하이록스 대회 준비, 지금 시작해도 늦지 않을까?", "otherPost": true}}, {"kw": "철산하이록스", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": 3, "prev": 3, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[철산하이록스] 하이록스 대회 중 보급, 젤과 물은 언제 먹을까?", "otherPost": false}}, {"kw": "광명하이록스", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 3, "prev": 1, "delta": -2, "measured": true, "title": "[철산PT] 철산 그룹PT 이용권 안내, 1개월권부터 6개월권까지", "otherPost": true}}, {"kw": "철산그룹PT", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": 3, "prev": 3, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[철산그룹PT] 철산 그룹PT 첫 수업 무료 체험, 어떻게 신청할까?", "otherPost": false}}, {"kw": "하이록스", "group": "core", "core": true, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 26, "prev": 8, "delta": -18, "measured": true, "title": "[광명하이록스] 하이록스 평균 기록, 내 기록은 상위 몇 %일까?", "otherPost": true}}, {"kw": "리부트팀트레이닝", "group": "core", "core": true, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광명헬스장] 광명 헬스장 고민 중, 그룹 수업이 맞는 사람일까?", "otherPost": true}}, {"kw": "철산헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[철산역헬스장] 철산 오전 운동, 평일 9시·10시 중 언제 갈까?", "otherPost": false}}, {"kw": "광명헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[광명헬스장] 광명 헬스장 고민 중, 그룹 수업이 맞는 사람일까?", "otherPost": false}}, {"kw": "철산역헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[철산역헬스장] 철산 오전 운동, 평일 9시·10시 중 언제 갈까?", "otherPost": false}}, {"kw": "철산헬스", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 28, "prev": 31, "delta": 3, "measured": true, "title": "[철산크로스핏] 크로스핏 스타일과 헬스 차이, 몸은 어디서 갈릴까?", "otherPost": true}}, {"kw": "철산동헬스장", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "광명PT", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "철산역PT", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "철산역 헬스", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[철산역헬스장] 철산 오전 운동, 평일 9시·10시 중 언제 갈까?", "otherPost": false}}, {"kw": "철산역 크로스핏", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광명크로스핏] 크로스핏 오픈 2027, 일반 회원도 참가할 수 있을까?", "otherPost": true}}, {"kw": "철산역 운동", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[철산역헬스장] 철산 오전 운동, 평일 9시·10시 중 언제 갈까?", "otherPost": false}}, {"kw": "철산역 하이록스", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": 3, "prev": 3, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "[철산역헬스장] 철산 오전 운동, 평일 9시·10시 중 언제 갈까?", "otherPost": false}}, {"kw": "철산역 그룹피티", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 4, "prev": 5, "delta": 1, "measured": true, "title": "철산역 하이록스 대회 준비, 지금 시작해도 늦지 않을까?", "otherPost": false}}, {"kw": "철산팀트레이닝", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[철산PT] 철산 그룹PT 이용권 안내, 1개월권부터 6개월권까지", "otherPost": false}}, {"kw": "광명그룹PT", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[철산PT] 철산 그룹PT, 1:1 PT랑 수업이 어떻게 다를까?", "otherPost": false}}, {"kw": "광명그룹운동", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 5, "prev": 3, "delta": -2, "measured": true, "title": "[광명헬스장] 광명 헬스장 고민 중, 그룹 수업이 맞는 사람일까?", "otherPost": false}}, {"kw": "크로스핏", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "뱃살빼는운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 77, "prev": 72, "delta": -5, "measured": true, "title": "[철산헬스장] 뱃살빼는운동, 복근 운동만 하면 뱃살이 빠질까?", "otherPost": false}}, {"kw": "단기간다이어트", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "서킷트레이닝", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 40, "prev": 39, "delta": -1, "measured": true, "title": "[광명헬스장] 서킷트레이닝, 몇 가지 운동을 몇 바퀴 돌아야 할까?", "otherPost": false}}, {"kw": "급찐급빠", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "그룹운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "크로스핏초보", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 72, "prev": 70, "delta": -2, "measured": true, "title": "[광명크로스핏] 크로스핏 초보, 첫 주 근육통이면 쉬어야 할까?", "otherPost": false}}, {"kw": "직장인운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}], "changes": {"up": [{"kw": "철산크로스핏", "surface": "blog", "from": 5, "to": 2, "otherPost": true, "score": 0.916290731874155}, {"kw": "철산역 그룹피티", "surface": "blog", "from": 5, "to": 4, "otherPost": false, "score": 0.2231435513142097}, {"kw": "철산헬스", "surface": "blog", "from": 31, "to": 28, "otherPost": true, "score": 0.10178269430994247}], "down": [{"kw": "하이록스", "surface": "blog", "from": 8, "to": 26, "otherPost": true, "score": 1.1786549963416464}, {"kw": "광명하이록스", "surface": "blog", "from": 1, "to": 3, "otherPost": true, "score": 1.0986122886681098}, {"kw": "광명그룹운동", "surface": "blog", "from": 3, "to": 5, "otherPost": false, "score": 0.5108256237659905}, {"kw": "뱃살빼는운동", "surface": "blog", "from": 72, "to": 77, "otherPost": false, "score": 0.06713930283762881}, {"kw": "크로스핏초보", "surface": "blog", "from": 70, "to": 72, "otherPost": false, "score": 0.028170876966695957}, {"kw": "서킷트레이닝", "surface": "blog", "from": 39, "to": 40, "otherPost": false, "score": 0.025317807984289953}], "new": [], "lost": []}, "newPosts": [{"title": "[철산하이록스] 하이록스 중 다리에 쥐가 나면, 멈춰야 할까?", "link": "https://blog.naver.com/reboot_teamtraining/224453318784", "postdate": "20261025", "kw": "철산역 하이록스", "rank": 11, "hits": 6}, {"title": "[광명크로스핏] 크로스핏 스타일 운동이 하이록스 훈련에 도움이 될....", "link": "https://blog.naver.com/reboot_teamtraining/224453793801", "postdate": "20261026", "kw": "광명크로스핏", "rank": 31, "hits": 7}, {"title": "[광명헬스장] 독감 주사 맞은 날 운동, 샤워까지 해도 될까?", "link": "https://blog.naver.com/reboot_teamtraining/224453795832", "postdate": "20261026", "kw": "리부트팀트레이닝", "rank": 40, "hits": 5}, {"title": "[광명하이록스] 하이록스 대회장 분위기, 처음 나가면 뭐에 놀랄까?", "link": "https://blog.naver.com/reboot_teamtraining/224453792491", "postdate": "20261026", "kw": "광명하이록스", "rank": 45, "hits": 5}], "topChanges": [], "competitors": [{"name": "클리어짐 철산역점", "ours": false, "first": [10, 10, 10, 10, 3, 3, 3, 3, 0, 0, 0, 0, 9, 9], "top5": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]}, {"name": "크로스핏어셈블", "ours": false, "first": [3, 3, 3, 3, 5, 4, 4, 5, 5, 5, 5, 5, 5, 5], "top5": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]}, {"name": "위무브트레이닝", "ours": false, "first": [0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 3, 3, 3], "top5": [0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 12, 12, 12, 12]}, {"name": "광명시민운동장", "ours": false, "first": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], "top5": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "온필라테스 라운지 철산점", "ours": false, "first": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "top5": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "헬스보이짐 철산점", "ours": false, "first": [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0], "top5": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]}, {"name": "리부트(철산)", "ours": true, "first": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], "top5": [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 7, 7, 7]}], "rotation": {"kw": "철산헬스장", "days": 14, "changes": 2, "holders": [{"name": "휘트니스피플 우먼 철산점", "days": 8}, {"name": "클리어짐 철산역점", "days": 6}]}, "panels": [{"title": "플레이스", "kind": "place", "note": "네이버 지역검색 상위 5곳 안에서의 위치. 5위 밖은 선이 끊어져 보입니다.", "series": [{"name": "철산헬스장", "slot": 0, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광명헬스장", "slot": 1, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산역헬스장", "slot": 2, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산PT", "slot": 3, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산헬스", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광명크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, 3, 3, 3, 3, 3, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산동헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광명PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산크로스핏", "slot": null, "focus": false, "values": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, null, null, null]}, {"name": "철산역PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산역 헬스", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산하이록스", "slot": null, "focus": false, "values": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]}, {"name": "광명하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1]}, {"name": "철산그룹PT", "slot": null, "focus": false, "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]}, {"name": "철산역 크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, null, null, null]}, {"name": "철산역 운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산역 하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]}, {"name": "철산역 그룹피티", "slot": null, "focus": false, "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}, {"name": "철산팀트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광명그룹PT", "slot": null, "focus": false, "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}, {"name": "광명그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}]}, {"title": "블로그 · 지역 키워드", "kind": "blog", "note": "블로그 검색에서 우리 글 가운데 가장 높은 순위.", "series": [{"name": "철산헬스장", "slot": 0, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 263, 263, null, 255, 268, 33, 34, 36, 39, 40, 40, 37, 42, 42, 43, 31, 31]}, {"name": "광명헬스장", "slot": 1, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 45, 49, 88, 91, 77, 81, 97, 31, 31, 31, 31, 31]}, {"name": "철산역헬스장", "slot": 2, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 335, null, 318, 10, 2, 13, 36, 28, 32, 31, 38, 36, 37, 31, 31]}, {"name": "철산PT", "slot": 3, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 281, null, null, null, null, 303, 10, 24, 43, 46, 46, 42, 5, 2, 2, 1, 24, 24]}, {"name": "철산헬스", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 271, null, null, 256, null, 278, 36, 36, 39, 49, 45, 1, 23, 20, 17, 15, 31, 28]}, {"name": "광명크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 166, 162, 161, 163, 170, 214, 166, 60, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "철산동헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광명PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "철산크로스핏", "slot": null, "focus": false, "values": [57, 57, 56, 57, 57, 57, 57, 57, 57, 57, 58, 58, 58, 59, 59, 58, 57, 57, 57, 31, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 5, 2]}, {"name": "철산역PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 3, null, null, null, null, null]}, {"name": "철산역 헬스", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 623, 552, 657, 755, null, 611, 691, 8, 19, 35, 42, 41, 41, 42, 46, 40, 37, 31, 31]}, {"name": "철산하이록스", "slot": null, "focus": false, "values": [27, 29, 29, 30, 31, 31, 32, 32, 33, 5, 3, 8, 2, 6, 6, 6, 2, 2, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "광명하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 81, 82, 82, 2, 5, 6, 4, 4, 3, 2, 9, 8, 2, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]}, {"name": "철산그룹PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 193, 193, 197, 220, 215, 200, 210, 69, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "철산역 크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 174, 172, 184, 183, 183, 184, 44, 43, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "철산역 운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 41, 39, 36, 36, 36, 37, 45, 54, 53, 44, 31, 31]}, {"name": "철산역 하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 27, 27, 27, 27, 23, 24, 27, 21, 22, 26, 25, 15, 16, 16, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2]}, {"name": "철산역 그룹피티", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 548, 456, 442, 539, 549, 546, 549, 558, 4, 6, 6, 7, 6, 3, 2, 3, 5, 4, 5, 4]}, {"name": "철산팀트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1]}, {"name": "광명그룹PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 172, 176, 183, null, null, 2, 2, 3, 4, 3, 2, 1, 1, 2, 1, 1, 1]}, {"name": "광명그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 4, 4, 5, 9, 13, 15, 17, 4, 8, 5, 3, 5]}]}, {"title": "블로그 · 니즈·브랜드 키워드", "kind": "blog", "note": "지역명이 없는 키워드라 블로그만 봅니다. 색은 검색량 상위 니즈 키워드와 브랜드 키워드.", "series": [{"name": "크로스핏", "slot": 0, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "하이록스", "slot": 1, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 27, 311, 25, 309, 307, 16, 90, 13, 3, 2, 8, 26]}, {"name": "뱃살빼는운동", "slot": 2, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 49, 50, 43, 82, 75, 63, 87, null, 97, 82, 72, 77]}, {"name": "단기간다이어트", "slot": 3, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "서킷트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 25, 29, 43, 42, 42, 41, 38, 36, 43, 45, 39, 40]}, {"name": "급찐급빠", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "크로스핏초보", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 32, 34, 33, 36, 39, 60, 63, 281, 63, 73, 70, 72]}, {"name": "직장인운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "리부트팀트레이닝", "slot": 4, "focus": false, "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}]}]}, {"name": "TeamPoise", "label": "팀포이즈(광교)", "counts": {"local": 19, "needs": 9, "brand": 3}, "coreCounts": {"local": 7, "all": 9}, "kpi": {"now": {"corePlaceTop5": 3, "coreBlogTop10": 6, "placeTop5": 5, "blogSeen": 26, "blogFirst": 9, "blogTop10": 14}, "prev": {"corePlaceTop5": 3, "coreBlogTop10": 7, "placeTop5": 5, "blogSeen": 26, "blogFirst": 8, "blogTop10": 15}, "hist": [{"corePlaceTop5": 2, "coreBlogTop10": 2, "placeTop5": 3, "blogSeen": 11, "blogFirst": 0, "blogTop10": 3}, {"corePlaceTop5": 2, "coreBlogTop10": 2, "placeTop5": 3, "blogSeen": 13, "blogFirst": 2, "blogTop10": 4}, {"corePlaceTop5": 2, "coreBlogTop10": 6, "placeTop5": 3, "blogSeen": 24, "blogFirst": 13, "blogTop10": 13}, {"corePlaceTop5": 2, "coreBlogTop10": 7, "placeTop5": 3, "blogSeen": 24, "blogFirst": 11, "blogTop10": 16}, {"corePlaceTop5": 2, "coreBlogTop10": 7, "placeTop5": 3, "blogSeen": 24, "blogFirst": 11, "blogTop10": 14}, {"corePlaceTop5": 2, "coreBlogTop10": 6, "placeTop5": 3, "blogSeen": 24, "blogFirst": 11, "blogTop10": 14}, {"corePlaceTop5": 2, "coreBlogTop10": 6, "placeTop5": 3, "blogSeen": 24, "blogFirst": 11, "blogTop10": 14}, {"corePlaceTop5": 2, "coreBlogTop10": 6, "placeTop5": 3, "blogSeen": 24, "blogFirst": 13, "blogTop10": 15}, {"corePlaceTop5": 2, "coreBlogTop10": 6, "placeTop5": 3, "blogSeen": 24, "blogFirst": 11, "blogTop10": 11}, {"corePlaceTop5": 2, "coreBlogTop10": 7, "placeTop5": 4, "blogSeen": 25, "blogFirst": 10, "blogTop10": 15}, {"corePlaceTop5": 2, "coreBlogTop10": 7, "placeTop5": 4, "blogSeen": 26, "blogFirst": 11, "blogTop10": 14}, {"corePlaceTop5": 3, "coreBlogTop10": 7, "placeTop5": 5, "blogSeen": 26, "blogFirst": 9, "blogTop10": 15}, {"corePlaceTop5": 3, "coreBlogTop10": 7, "placeTop5": 5, "blogSeen": 26, "blogFirst": 8, "blogTop10": 15}, {"corePlaceTop5": 3, "coreBlogTop10": 6, "placeTop5": 5, "blogSeen": 26, "blogFirst": 9, "blogTop10": 14}]}, "table": [{"kw": "광교PT", "group": "core", "core": true, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[광교PT] 그룹PT 아침 수업과 저녁 수업, 근력은 언제 더 붙을까?", "otherPost": true}}, {"kw": "상현역PT", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "[상현역PT] 그룹PT 힘들 때 숨 참고 들어도 될까, 언제 내쉴까?", "otherPost": false}}, {"kw": "광교다이어트", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 35, "prev": 3, "delta": -32, "measured": true, "title": "[광교다이어트] 다이어트 운동 끝나고 늦은 식사, 밤에 먹으면 살찔....", "otherPost": true}}, {"kw": "광교하이록스", "group": "core", "core": true, "focus": true, "blogOnly": false, "place": {"rank": 5, "prev": 5, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광교하이록스] 하이록스 월볼, 노렙 안 받으려면 뭘 지켜야 할까?", "otherPost": false}}, {"kw": "광교그룹운동", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광교그룹운동] 서킷트레이닝, 근육도 붙을까 체력만 좋아질까?", "otherPost": false}}, {"kw": "상현그룹 PT", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[상현역PT] 그룹PT 힘들 때 숨 참고 들어도 될까, 언제 내쉴까?", "otherPost": false}}, {"kw": "상현 하이록스", "group": "core", "core": true, "focus": false, "blogOnly": false, "place": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[상현하이록스] 하이록스 록스존, 오가는 사이 몇 분이 새고 있을까?", "otherPost": true}}, {"kw": "하이록스", "group": "core", "core": true, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 43, "prev": 41, "delta": -2, "measured": true, "title": "[광교하이록스] 하이록스 월볼, 노렙 안 받으려면 뭘 지켜야 할까?", "otherPost": false}}, {"kw": "팀포이즈", "group": "core", "core": true, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[상현헬스장] 헬스장 첫 달 무게, 가볍게 시작해도 근육이 붙을까?", "otherPost": false}}, {"kw": "광교헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 87, "prev": 2, "delta": -85, "measured": true, "title": "[광교헬스장] 헬스장 운동 순서, 유산소 먼저 할까 웨이트 먼저 할까....", "otherPost": true}}, {"kw": "상현역헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": 4, "prev": 4, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 3, "prev": 16, "delta": 13, "measured": true, "title": "[상현역헬스장] 헬스장 1~2주 못 가면, 근육이 얼마나 빠질까?", "otherPost": false}}, {"kw": "상현동헬스장", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[상현동헬스장] 헬스장 인바디 체지방률, 잴 때마다 왜 다르게 나올....", "otherPost": false}}, {"kw": "광교크로스핏", "group": "focus", "core": false, "focus": true, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 31, "prev": 31, "delta": 0, "measured": true, "title": "[광교크로스핏] 크로스핏 용어 AMRAP·EMOM, 어떻게 읽을까?", "otherPost": false}}, {"kw": "수지헬스장", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 15, "prev": 13, "delta": -2, "measured": true, "title": "[수지헬스장] 헬스장 등록 전, 한 달에 몇 번 갈지 세어볼까?", "otherPost": false}}, {"kw": "광교중앙역헬스장", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 2, "prev": 3, "delta": 1, "measured": true, "title": "[광교중앙역헬스장] 헬스장 퇴근 후 운동, 종일 앉은 몸도 만회될까?", "otherPost": false}}, {"kw": "광교바디프로필", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[광교바디프로필] 바디프로필 전 탄수화물 몰아 먹으면 근육이 커 ....", "otherPost": false}}, {"kw": "수지PT", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 34, "prev": 35, "delta": 1, "measured": true, "title": "[수지PT] 그룹PT 체험 전 부상 이력, 어디까지 말해야 할까?", "otherPost": false}}, {"kw": "수지크로스핏", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 2, "prev": 2, "delta": 0, "measured": true, "title": "[수지크로스핏] 크로스핏 공식 박스와 서킷 수업, 뭐가 다를까?", "otherPost": false}}, {"kw": "상현헬스장", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 7, "prev": 6, "delta": -1, "measured": true, "title": "[상현동헬스장] 헬스장 등록하고 석 달, 그만두는 사람이 왜 많을까?", "otherPost": false}}, {"kw": "상현그룹 트레이닝", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "[상현그룹트레이닝] 그룹트레이닝 심박수, 몇까지 올라가야 운동이 ....", "otherPost": false}}, {"kw": "상현 운동", "group": "local", "core": false, "focus": false, "blogOnly": false, "place": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}, "blog": {"rank": 1, "prev": 3, "delta": 2, "measured": true, "title": "[상현그룹PT] 그룹PT 끝나고 단백질, 30분 안에 꼭 먹어야 할까?", "otherPost": false}}, {"kw": "크로스핏", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "뱃살빼는운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 35, "prev": 36, "delta": 1, "measured": true, "title": "[수지헬스장] 헬스장 뱃살 빼는 운동, 웨이트만 해도 빠질까?", "otherPost": false}}, {"kw": "단기간다이어트", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "서킷트레이닝", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 14, "prev": 12, "delta": -2, "measured": true, "title": "[광교그룹운동] 서킷트레이닝, 근육도 붙을까 체력만 좋아질까?", "otherPost": false}}, {"kw": "급찐급빠", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "그룹운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 30, "prev": 26, "delta": -4, "measured": true, "title": "[광교PT] 상현역 그룹운동, 동작이 어려우면 강도를 낮춰도 될까?", "otherPost": false}}, {"kw": "크로스핏초보", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "직장인운동", "group": "needs", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": null, "prev": null, "delta": null, "measured": true, "title": "", "otherPost": false}}, {"kw": "슬릭부스트", "group": "brand", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 57, "prev": 57, "delta": 0, "measured": true, "title": "슬릭부스트 상현점 찾다 왔다면, 여긴 어떻게 됐을까?", "otherPost": false}}, {"kw": "슬릭부스트상현", "group": "brand", "core": false, "focus": false, "blogOnly": true, "place": null, "blog": {"rank": 1, "prev": 1, "delta": 0, "measured": true, "title": "슬릭부스트 상현점 찾다 왔다면, 여긴 어떻게 됐을까?", "otherPost": false}}], "changes": {"up": [{"kw": "상현역헬스장", "surface": "blog", "from": 16, "to": 3, "otherPost": false, "score": 1.6739764335716714}, {"kw": "상현 운동", "surface": "blog", "from": 3, "to": 1, "otherPost": false, "score": 1.0986122886681098}, {"kw": "광교중앙역헬스장", "surface": "blog", "from": 3, "to": 2, "otherPost": false, "score": 0.4054651081081645}, {"kw": "수지PT", "surface": "blog", "from": 35, "to": 34, "otherPost": false, "score": 0.02898753687325195}, {"kw": "뱃살빼는운동", "surface": "blog", "from": 36, "to": 35, "otherPost": false, "score": 0.0281708769666964}], "down": [{"kw": "광교헬스장", "surface": "blog", "from": 2, "to": 87, "otherPost": true, "score": 3.7727609380946383}, {"kw": "광교다이어트", "surface": "blog", "from": 3, "to": 35, "otherPost": true, "score": 2.456735772821304}, {"kw": "상현헬스장", "surface": "blog", "from": 6, "to": 7, "otherPost": false, "score": 0.15415067982725827}, {"kw": "서킷트레이닝", "surface": "blog", "from": 12, "to": 14, "otherPost": false, "score": 0.15415067982725805}, {"kw": "수지헬스장", "surface": "blog", "from": 13, "to": 15, "otherPost": false, "score": 0.14310084364067333}, {"kw": "그룹운동", "surface": "blog", "from": 26, "to": 30, "otherPost": false, "score": 0.14310084364067333}, {"kw": "하이록스", "surface": "blog", "from": 41, "to": 43, "otherPost": false, "score": 0.047628048989254435}], "new": [], "lost": []}, "newPosts": [{"title": "[상현그룹PT] 그룹PT 인원이 많으면, 코치가 내 자세를 봐 줄까?", "link": "https://blog.naver.com/sleekboostls/224453809108", "postdate": "20261026", "kw": "상현그룹 PT", "rank": 7, "hits": 5}, {"title": "[수지PT] 그룹PT 끝나고 머리가 아프다면, 왜 그럴까?", "link": "https://blog.naver.com/sleekboostls/224453819109", "postdate": "20261026", "kw": "상현그룹 PT", "rank": 17, "hits": 4}, {"title": "[광교크로스핏] 크로스핏 로잉머신, 댐퍼는 몇에 두어야 할까?", "link": "https://blog.naver.com/sleekboostls/224453810427", "postdate": "20261026", "kw": "광교크로스핏", "rank": 48, "hits": 4}], "topChanges": [], "competitors": [{"name": "광교PT JB GYM", "ours": false, "first": [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4], "top5": [1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 3, 3, 5, 5]}, {"name": "케어짐PT&기구필라테스 상현점", "ours": false, "first": [1, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 3, 3], "top5": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]}, {"name": "헬스보이짐PT 상현점", "ours": false, "first": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "top5": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]}, {"name": "F45 광교", "ours": false, "first": [1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 1], "top5": [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}, {"name": "좋은습관 PT STUDIO 광교", "ours": false, "first": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], "top5": [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]}, {"name": "크로스핏 블루 광교 3호점", "ours": false, "first": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "top5": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2]}, {"name": "팀포이즈(광교)", "ours": true, "first": [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], "top5": [3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 5, 5, 5]}], "rotation": {"kw": "광교헬스장", "days": 14, "changes": 3, "holders": [{"name": "더블에스휘트니스 광교점", "days": 9}, {"name": "헬스보이짐앤필라걸 광교점", "days": 2}, {"name": "광교PT JB GYM", "days": 2}, {"name": "킹스짐PT 광교아브뉴프랑점", "days": 1}]}, "panels": [{"title": "플레이스", "kind": "place", "note": "네이버 지역검색 상위 5곳 안에서의 위치. 5위 밖은 선이 끊어져 보입니다.", "series": [{"name": "광교헬스장", "slot": 0, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교PT", "slot": 1, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "상현역헬스장", "slot": 2, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, 5, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 5, 4, 4, 4, 4]}, {"name": "상현동헬스장", "slot": 3, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "수지헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교크로스핏", "slot": 4, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교중앙역헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "상현역PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교바디프로필", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교다이어트", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "수지PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "수지크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교하이록스", "slot": 5, "focus": true, "values": [null, null, null, null, null, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, null, null, null, null, null, null, null, null, null, null, null, null, null, 5, 5, 5]}, {"name": "상현헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "광교그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "상현그룹 PT", "slot": null, "focus": false, "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현그룹 트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현 하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현 운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}]}, {"title": "블로그 · 지역 키워드", "kind": "blog", "note": "블로그 검색에서 우리 글 가운데 가장 높은 순위.", "series": [{"name": "광교헬스장", "slot": 0, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 20, 33, 33, 35, 48, 20, 10, 10, 7, 2, 87]}, {"name": "광교PT", "slot": 1, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 225, null, null, null, null, null, null, 212, 32, 31, 32, 33, 33, 41, 33, 31, 31, 31, 31, 31]}, {"name": "상현역헬스장", "slot": 2, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 1, 1, 34, 41, 31, 2, 16, 3]}, {"name": "상현동헬스장", "slot": 3, "focus": true, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 41, 54, 64, 64, 65, 68, 89, 31, 31, 31, 31, 31]}, {"name": "수지헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 62, 41, 28, 27, 27, 30, 31, 10, 11, 13, 13, 15]}, {"name": "광교크로스핏", "slot": 4, "focus": true, "values": [null, null, 127, 116, 112, null, 127, 126, 122, 126, 130, 122, 124, 125, 122, 122, 123, 121, 120, 115, 120, 14, 22, 23, 25, 18, 5, 39, 24, 26, 28, 31, 31]}, {"name": "광교중앙역헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 2, 2, 2, 1, 1, 1, 1, 2, 3, 3, 2]}, {"name": "상현역PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 435, 442, 389, 417, 181, 425, 230, 162, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2, 2]}, {"name": "광교바디프로필", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "광교다이어트", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 373, null, 35, 5, 9, 17, 14, 14, 36, 2, 3, 4, 3, 35]}, {"name": "수지PT", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 24, 3, 34, 1, 1, 1, 21, 31, 32, 33, 35, 34]}, {"name": "수지크로스핏", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 347, 1, 1, 1, 2, 2, 1, 1, 2, 1, 2, 2, 2]}, {"name": "광교하이록스", "slot": 5, "focus": true, "values": [null, null, null, null, null, 17, 23, 17, 17, 27, 117, 16, 18, 19, 17, 16, 16, 22, 17, 19, 48, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현헬스장", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 384, 296, 379, 332, 346, 299, 367, 333, 20, 32, 32, 25, 30, 31, 32, 14, 12, 9, 6, 7]}, {"name": "광교그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, 173, 184, 210, 259, 192, 168, 169, 218, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현그룹 PT", "slot": null, "focus": false, "values": [null, null, null, null, null, 25, null, 216, null, 19, 17, 25, null, 164, 132, 134, 22, 24, 140, 24, 21, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현그룹 트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, 1, 203, 2, 2, 1, 111, 108, 106, 110, 108, 125, 108, 106, 105, 118, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현 하이록스", "slot": null, "focus": false, "values": [null, null, null, null, null, 5, 5, 5, 5, 5, 9, 5, 5, 5, 5, 5, 5, 4, 4, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "상현 운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 16, 5, 23, 26, 31, 28, 31, 9, 1, 34, 3, 1]}]}, {"title": "블로그 · 니즈·브랜드 키워드", "kind": "blog", "note": "지역명이 없는 키워드라 블로그만 봅니다. 색은 검색량 상위 니즈 키워드와 브랜드 키워드.", "series": [{"name": "크로스핏", "slot": 0, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "하이록스", "slot": 1, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 37, 38, 39, 41, 43]}, {"name": "뱃살빼는운동", "slot": 2, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 34, 33, 36, 35]}, {"name": "단기간다이어트", "slot": 3, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "서킷트레이닝", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 41, 39, 41, 38, 37, 38, 39, 35, 21, 19, 12, 14]}, {"name": "급찐급빠", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "그룹운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 381, 49, 58, 60, 33, 33, 32, 26, 23, 27, 26, 26, 30]}, {"name": "크로스핏초보", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "직장인운동", "slot": null, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {"name": "슬릭부스트", "slot": 4, "focus": false, "values": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 246, 204, 201, null, null, 39, 5, 5, 10, 10, 10, 52, 57, 59, 63, 57, 57]}, {"name": "팀포이즈", "slot": 5, "focus": false, "values": [null, null, null, null, null, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}, {"name": "슬릭부스트상현", "slot": null, "focus": false, "values": [null, null, null, null, null, 11, 11, 10, 18, 18, 19, 19, 24, 24, 24, 34, 34, 7, 7, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}]}]}]};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const md = d => d ? d.slice(5).replace('-', '/') : '';
+const slotColor = slot => slot === null ? 'var(--text-muted)' : `var(--s${slot + 1})`;
+const SURF = { place: '플레이스', blog: '블로그' };
 
-/* ---------- 센터별 구역 뼈대 ---------- */
-const CI = DATA.centers.map(c => c.label);
+document.getElementById('asof').innerHTML = DATA.prev
+  ? `<b>${DATA.last}</b> 기준 · 변동은 직전 수집일 <b>${DATA.prev}</b>과 비교`
+  : `<b>${DATA.last}</b> 기준 (첫 수집)`;
+document.getElementById('depth').textContent = DATA.depth;
+
+/* ---------- 센터별 구역 ---------- */
 const accent = i => `--accent:var(--c${i % 2});--accent-bg:var(--c${i % 2}-bg)`;
 document.getElementById('jump').innerHTML = DATA.centers.map((c, i) =>
   `<a href="#center${i}" style="${accent(i)}">${esc(c.label)}</a>`).join('');
-document.getElementById('centers').innerHTML = DATA.centers.map((c, i) => `
-  <section class="center" id="center${i}" style="${accent(i)}">
-    <div class="center-head"><h2>${esc(c.label)}</h2><span>추적 키워드 ${c.keywords}개</span></div>
-    <h3 class="sec">오늘 상태</h3>
-    <div class="tiles" id="tiles${i}"></div>
-    <h3 class="sec">추이</h3>
-    <div class="grid" id="charts${i}"></div>
-    <details>
-      <summary>표로 보기 (날짜별 전체 순위)</summary>
-      <div id="tables${i}"></div>
-    </details>
-  </section>`).join('');
 
-/* ---------- 오늘 상태 타일 ---------- */
-const star = f => f ? '<span class="star">★</span> ' : '';
-const tileOrder = [...DATA.today.filter(t => t.focus), ...DATA.today.filter(t => !t.focus)];
-const tileHtml = t => {
-  const note = t.rank
-    ? (t.delta === null ? (DATA.hasPrev ? '신규 진입' : '첫 측정')
-       : t.delta === 0 ? '변동 없음'
-       : t.delta > 0 ? `▲ ${t.delta}계단` : `▼ ${-t.delta}계단`)
-    : (t.surface === 'place' ? '상위 5위 밖' : '미노출');
-  return `<div class="tile${t.focus ? ' focus' : ''}">
-            <div class="k">${star(t.focus)}${esc(t.label)}</div>
-            <div class="c">${esc(t.surfaceLabel)}</div>
-            <div class="v">${t.rank ? t.rank + '위' : '—'}</div>
-            <div class="d">${note}</div>
-          </div>`;
+/* 작은 흐름선 — 값이 클수록 위 (개수용). 마지막 점만 찍는다 */
+function sparkCount(vals, color, max) {
+  const w = 84, h = 26, n = vals.length;
+  if (n < 2) return '';
+  const top = Math.max(1, max ?? Math.max(...vals));
+  const pts = vals.map((v, i) => [2 + i / (n - 1) * (w - 6), h - 3 - v / top * (h - 6)]);
+  const [lx, ly] = pts[n - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="1.6"
+      stroke-linejoin="round" stroke-linecap="round" opacity=".85"/>
+    <circle cx="${lx}" cy="${ly}" r="2.6" fill="${color}"/></svg>`;
+}
+
+function kpiHtml(c) {
+  const n = c.counts, now = c.kpi.now, before = c.kpi.prev, hist = c.kpi.hist;
+  const blogTotal = n.local + n.needs + n.brand;
+  const diff = k => {
+    if (!DATA.prev || before[k] === undefined) return '';
+    const d = now[k] - before[k];
+    return d === 0 ? '변동 없음' : d > 0 ? `<span class="up">▲ ${d}</span>` : `<span class="down">▼ ${-d}</span>`;
+  };
+  const tile = (k, label, total, hint, core) => `<div class="kpi${core ? ' core' : ''}">
+      <div class="k">${core ? '<span class="core-mark">◆</span> ' : ''}${label}</div>
+      <div class="v">${now[k]}${total ? `<small> / ${total}</small>` : ''}</div>
+      ${sparkCount(hist.map(h => h[k]), core ? 'var(--accent)' : 'var(--text-muted)', total || undefined)}
+      <div class="d">${diff(k)}${hint ? ` · ${hint}` : ''}</div></div>`;
+  return `<div class="kpis">
+    ${c.coreCounts.local ? tile('corePlaceTop5', '핵심 · 플레이스 5위 안', c.coreCounts.local, '', true) : ''}
+    ${c.coreCounts.all ? tile('coreBlogTop10', '핵심 · 블로그 10위 안', c.coreCounts.all, '', true) : ''}
+    ${tile('placeTop5', '플레이스 5위 안', n.local, '지역 키워드 전체')}
+    ${tile('blogSeen', '블로그 노출', blogTotal, `약 ${DATA.depth}개 안`)}
+    ${tile('blogFirst', '블로그 1위', 0, '')}
+    ${tile('blogTop10', '블로그 10위 안', 0, '')}
+  </div>
+  <p class="foot">작은 선 = 최근 ${hist.length}번 수집의 흐름 (오른쪽 끝이 오늘)</p>`;
+}
+
+/* ---------- 플레이스 경쟁 구도 ---------- */
+function barsHtml(vals, max, color) {
+  const w = 98, h = 22, n = vals.length, bw = (w - (n - 1) * 1.5) / n;
+  return `<svg class="bars" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${
+    vals.map((v, i) => {
+      const bh = v ? Math.max(2, v / Math.max(1, max) * (h - 2)) : 1;
+      return `<rect x="${i * (bw + 1.5)}" y="${h - bh}" width="${bw}" height="${bh}" rx="1"
+               fill="${v ? color : 'var(--grid)'}" opacity="${i === n - 1 ? 1 : .7}"/>`;
+    }).join('')}</svg>`;
+}
+function boardHtml(c) {
+  const rows = c.competitors, total = c.counts.local;
+  const max = Math.max(1, ...rows.flatMap(r => r.first));
+  const r = c.rotation;
+  let insight = '';
+  if (r && r.holders.length) {
+    const who = r.holders.map(h => `${esc(h.name)} ${h.days}일`).join(', ');
+    insight = `<p class="insight"><span class="star">★</span> <b>${esc(r.kw)}</b> 플레이스 1위는 최근 ${r.days}번 수집 동안
+      <b>${r.changes}번</b> 바뀌었습니다 (${who}). ${r.holders.length > 1
+        ? '헬스장·PT처럼 비슷한 키워드는 네이버가 거의 같은 순위표를 보여 줘서, 1위가 바뀌면 여러 키워드에서 한꺼번에 바뀐 것처럼 보입니다.' : ''}</p>`;
+  }
+  const moved = c.topChanges.length
+    ? `<ul>${c.topChanges.map(t => `<li><span class="muted">${esc(t.from)}</span> → <b>${esc(t.to)}</b>
+        ${t.ours ? ' <span class="tag">우리</span>' : ''}<span class="meta">${t.kws.length}개 키워드: ${t.kws.map(esc).join(', ')}</span></li>`).join('')}</ul>`
+    : '<div class="empty">없음</div>';
+  return `${insight}
+    <div class="lists" style="margin-top:0">
+      <div class="kt-wrap"><table class="board"><thead><tr>
+        <th>업체 (지역 키워드 ${total}개 기준)</th><th class="num">오늘 1위</th><th class="num">5위 안</th><th>1위 키워드 수 · 최근 ${c.kpi.hist.length}번</th>
+      </tr></thead><tbody>${rows.map(e => `<tr class="${e.ours ? 'ours' : ''}">
+        <td class="name" title="${esc(e.name)}">${e.ours ? '우리 · ' : ''}${esc(e.name)}</td>
+        <td class="num"><b>${e.first[e.first.length - 1]}</b></td>
+        <td class="num">${e.top5[e.top5.length - 1]}</td>
+        <td>${barsHtml(e.first, max, e.ours ? 'var(--accent)' : 'var(--text-muted)')}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="box"><h4>${DATA.prev ? md(DATA.prev) + ' 대비 ' : ''}플레이스 1위가 바뀐 곳</h4>${moved}</div>
+    </div>`;
+}
+
+const moveLine = m => {
+  const arrow = m.to < m.from ? `<span class="up">▲${m.from - m.to}</span>` : `<span class="down">▼${m.to - m.from}</span>`;
+  return `<li>${esc(m.kw)} <span class="sf">${SURF[m.surface]}</span>
+    ${m.from} → <b>${m.to}위</b> ${arrow}${m.otherPost ? ' <span class="tag">다른 글</span>' : ''}</li>`;
 };
-CI.forEach((label, i) => {
-  document.getElementById('tiles' + i).innerHTML =
-    tileOrder.filter(t => t.center === label).map(tileHtml).join('');
-});
+const newLine = m => `<li>${esc(m.kw)} <span class="sf">${SURF[m.surface]}</span>
+    ${m.surface === 'place' ? '5위 밖' : '미노출'} → <b>${m.to}위</b></li>`;
+const lostLine = m => `<li>${esc(m.kw)} <span class="sf">${SURF[m.surface]}</span>
+    ${m.from}위 → <span class="down">${m.surface === 'place' ? '5위 밖' : '미노출'}</span></li>`;
+
+function moveBox(title, items, line, limit = 6) {
+  if (!items.length) return `<div class="box"><h4>${title}</h4><div class="empty">없음</div></div>`;
+  const head = items.slice(0, limit).map(line).join('');
+  const rest = items.slice(limit);
+  return `<div class="box"><h4>${title} <span class="muted">${items.length}</span></h4><ul>${head}</ul>
+    ${rest.length ? `<details><summary>${rest.length}개 더 보기</summary><ul>${rest.map(line).join('')}</ul></details>` : ''}</div>`;
+}
+
+function changesHtml(c) {
+  if (!DATA.prev) return '';
+  const ch = c.changes;
+  const posts = c.newPosts.length
+    ? `<ul>${c.newPosts.map(p => `<li><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+         <span class="meta">${md(p.postdate.slice(0,4) + '-' + p.postdate.slice(4,6) + '-' + p.postdate.slice(6))} 발행 ·
+         ${esc(p.kw)} <b>${p.rank}위</b> · 키워드 ${p.hits}개에서 잡힘</span></li>`).join('')}</ul>`
+    : '<div class="empty">없음</div>';
+  return `
+    <div class="moves">
+      ${moveBox('오른 곳', ch.up, moveLine)}
+      ${moveBox('내린 곳', ch.down, moveLine)}
+      ${moveBox('새로 잡힘', ch.new, newLine)}
+      ${moveBox('빠짐', ch.lost, lostLine)}
+    </div>
+    <div class="box" style="margin-top:9px"><h4>오늘 처음 검색에 잡힌 우리 글 <span class="muted">${c.newPosts.length}</span></h4>${posts}</div>`;
+}
+
+/* ---------- 키워드별 순위 표 ---------- */
+const GROUPS = {
+  core: '<span class="core-mark">◆</span> 센터 핵심 키워드 — 우리 수업과 바로 이어지는 키워드',
+  focus: '<span class="star">★</span> 검색량 상위 키워드',
+  local: '그 외 지역 키워드',
+  needs: '니즈 키워드 — 지역명이 없어 블로그만 봅니다',
+  brand: '브랜드 키워드 — 블로그만 봅니다',
+};
+const HN = Math.min(14, DATA.dates.length);
+/* 키워드 한 줄의 최근 흐름 — 위: 플레이스 5위 안이었던 날(진할수록 상위), 아래: 블로그 순위 선 */
+function trendHtml(placeVals, blogVals) {
+  const w = 90, n = HN, cw = w / n;
+  let s = `<svg class="spark" width="${w}" height="30" viewBox="0 0 ${w} 30" aria-hidden="true">`;
+  if (placeVals) {
+    placeVals.slice(-n).forEach((v, i) => {
+      s += `<rect x="${i * cw + .5}" y="1" width="${cw - 1.5}" height="6" rx="1"
+              fill="${v ? 'var(--accent)' : 'var(--grid)'}" opacity="${v ? 1.15 - v * .15 : 1}"/>`;
+    });
+  }
+  const y = r => 11 + Math.log(r) / Math.log(1000) * 17;
+  let seg = [], dots = '';
+  const flush = () => { if (seg.length > 1) s += `<polyline points="${seg.join(' ')}" fill="none"
+      stroke="var(--text-secondary)" stroke-width="1.3" stroke-linejoin="round"/>`; seg = []; };
+  blogVals.slice(-n).forEach((v, i) => {
+    const x = i * cw + cw / 2;
+    if (v) { seg.push(`${x},${y(v)}`); if (i === n - 1) dots = `<circle cx="${x}" cy="${y(v)}" r="2.4" fill="var(--text-primary)"/>`; }
+    else flush();
+  });
+  flush();
+  return s + dots + '</svg>';
+}
+function rankCell(o, surface) {
+  if (!o) return '<span class="miss">·</span>';
+  if (!o.measured) return '<span class="miss">수집 전</span>';
+  if (!o.rank) {
+    const none = surface === 'place' ? '5위 밖' : '미노출';
+    return o.prev ? `<span class="down">${none}</span><span class="delta muted">(${o.prev}위)</span>`
+                  : `<span class="miss">${none}</span>`;
+  }
+  let d = '';
+  if (o.delta > 0) d = `<span class="delta up">▲${o.delta}</span>`;
+  else if (o.delta < 0) d = `<span class="delta down">▼${-o.delta}</span>`;
+  else if (o.delta === null && DATA.prev) d = '<span class="delta up">새로</span>';
+  return `<b>${o.rank}위</b>${d}`;
+}
+function tableHtml(c) {
+  // 추이 차트 데이터에서 키워드별 값 찾기
+  const vals = { place: {}, blog: {} };
+  c.panels.forEach(p => p.series.forEach(s => { vals[p.kind][s.name] = s.values; }));
+  let html = `<div class="kt-wrap"><table class="kt"><thead><tr>
+    <th>키워드</th><th class="num">플레이스</th><th class="num">블로그</th>
+    <th class="trend">최근 ${HN}번</th><th class="post">블로그에서 잡힌 우리 글</th>
+  </tr></thead><tbody>`;
+  let group = null;
+  c.table.forEach(r => {
+    if (r.group !== group) { group = r.group; html += `<tr class="grp"><td colspan="5">${GROUPS[group]}</td></tr>`; }
+    const marks = (r.core ? '<span class="core-mark">◆</span>' : '') + (r.focus ? '<span class="star">★</span>' : '');
+    html += `<tr class="${r.core || r.focus ? 'focus' : ''}">
+      <td class="kw">${marks ? marks + ' ' : ''}${esc(r.kw)}${r.blogOnly && r.group === 'core' ? ' <span class="tag">블로그만</span>' : ''}</td>
+      <td class="num">${rankCell(r.place, 'place')}</td>
+      <td class="num">${rankCell(r.blog, 'blog')}</td>
+      <td class="trend">${trendHtml(r.place ? vals.place[r.kw] : null, vals.blog[r.kw] || [])}</td>
+      <td class="post" title="${esc(r.blog.title)}">${esc(r.blog.title)}</td></tr>`;
+  });
+  return html + `</tbody></table></div>
+    <p class="foot">최근 ${HN}번 칸: 위쪽 막대 = 플레이스 5위 안에 든 날(진할수록 상위), 아래 선 = 블로그 순위(위로 갈수록 상위, 끊긴 곳은 미노출)</p>`;
+}
 
 /* ---------- SVG 라인 차트 ---------- */
-const W = 660, H = 250, PL = 46, PR = 104, PT = 14, PB = 40;
+const W = 660, H = 256, PL = 46, PR = 122, PT = 20, PB = 40;
 const plotW = W - PL - PR, plotH = H - PT - PB;
+const N = DATA.dates.length, SPAN = Math.max(1, DATA.days[N - 1] - DATA.days[0]);
+// 날짜 간격은 실제 달력 기준 — 수집이 빠진 날은 간격이 넓어진다
+const X = i => N === 1 ? PL + plotW / 2 : PL + (DATA.days[i] - DATA.days[0]) / SPAN * plotW;
+const LOG_TICKS = [1, 3, 10, 30, 100, 300, 1000];
 
-function ticks(max) {
-  if (max <= 5) return [1, 2, 3, 4, 5];
-  const step = Math.ceil(max / 5);
-  const out = [1];
-  for (let v = step; v <= max; v += step) out.push(v);
+function scale(panel) {
+  if (panel.kind === 'place') {
+    return { y: r => PT + (r - 1) / 4 * plotH, ticks: [1, 2, 3, 4, 5] };
+  }
+  // 블로그는 로그 눈금 — 1~10위 차이가 300~900위 차이보다 잘 보이게
+  const maxObs = Math.max(10, ...panel.series.flatMap(s => s.values.filter(Boolean)));
+  const max = LOG_TICKS.find(t => t >= maxObs) || 1000;
+  return { y: r => PT + Math.log(r) / Math.log(max) * plotH, ticks: LOG_TICKS.filter(t => t <= max) };
+}
+
+function xLabels() {
+  // 라벨끼리 겹치지 않게 약 55px(뷰박스 기준)마다 하나, 마지막 날짜는 항상
+  const out = [N - 1];
+  for (let i = N - 2; i >= 0; i--) if (X(out[out.length - 1]) - X(i) >= 55) out.push(i);
   return out;
 }
 
-function drawPanel(panel, pi) {
-  const n = DATA.dates.length;
-  const x = i => n === 1 ? PL + plotW / 2 : PL + (i / (n - 1)) * plotW;
-  const y = r => PT + ((r - 1) / Math.max(1, panel.max - 1)) * plotH;
-
+function drawPanel(panel, key) {
+  const { y, ticks } = scale(panel);
   let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(panel.title)} 순위 추이">`;
-
-  // 그리드 + y축 눈금 (가라앉은 회색)
-  for (const t of ticks(panel.max)) {
-    svg += `<line x1="${PL}" x2="${PL + plotW}" y1="${y(t)}" y2="${y(t)}"
-             stroke="var(--grid)" stroke-width="1"/>
-            <text x="${PL - 9}" y="${y(t) + 4}" text-anchor="end"
-             font-size="11" fill="var(--text-muted)">${t}위</text>`;
+  for (const t of ticks) {
+    svg += `<line x1="${PL}" x2="${PL + plotW}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>
+            <text x="${PL - 9}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--text-muted)">${t}위</text>`;
   }
-  // x축 날짜
-  DATA.dates.forEach((d, i) => {
-    svg += `<text x="${x(i)}" y="${H - PB + 20}" text-anchor="middle"
-             font-size="11" fill="var(--text-secondary)">${d.slice(5)}</text>`;
+  svg += `<line x1="${PL}" x2="${PL + plotW}" y1="${PT + plotH}" y2="${PT + plotH}" stroke="var(--axis)" stroke-width="1"/>`;
+  xLabels().forEach(i => {
+    svg += `<text x="${X(i)}" y="${H - PB + 20}" text-anchor="${i === N - 1 ? 'end' : 'middle'}"
+             font-size="11" fill="var(--text-secondary)">${md(DATA.dates[i])}</text>`;
   });
-  svg += `<text x="${PL}" y="${H - 6}" font-size="10" fill="var(--text-muted)">↑ 위쪽이 상위</text>`;
+  svg += `<text x="${PL}" y="${H - 5}" font-size="10" fill="var(--text-muted)">↑ 위쪽이 상위</text>`;
 
-  // 마우스 위치 표시용 세로선
-  svg += `<line id="cross${pi}" y1="${PT}" y2="${PT + plotH}" stroke="var(--border)"
-           stroke-width="1" opacity="0"/>`;
+  // 블로그 확인 범위가 넓어진 날 — 이날부터 깊은 순위가 새로 보이기 시작한다
+  if (panel.kind === 'blog') {
+    DATA.marks.forEach(m => {
+      const i = DATA.dates.indexOf(m.date);
+      if (i < 0) return;
+      svg += `<line x1="${X(i)}" x2="${X(i)}" y1="${PT}" y2="${PT + plotH}" stroke="var(--text-muted)"
+               stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>
+              <text x="${X(i) + 3}" y="${PT - 6}" font-size="9.5" fill="var(--text-muted)">${esc(m.label)}</text>`;
+    });
+  }
+  svg += `<line id="cross${key}" y1="${PT}" y2="${PT + plotH}" stroke="var(--axis)" stroke-width="1" opacity="0"/>`;
 
+  // 회색 선을 먼저 그려 색 있는 선이 위로 오게 한다
+  const order = [...panel.series.filter(s => s.slot === null), ...panel.series.filter(s => s.slot !== null)];
   const ends = [];
-  colorize(panel);
-  // 회색(비강조)을 먼저 그려서 강조선이 위로 오게 한다
-  const drawOrder = [...panel.series.filter(s => !s.focus), ...panel.series.filter(s => s.focus)];
-  drawOrder.forEach(s => {
-    const c = s.color, sw = s.focus ? 2.5 : 1.2, op = s.focus ? 1 : 0.55;
-    // 값이 비어 있으면 선을 끊는다
+  order.forEach(s => {
+    const c = slotColor(s.slot), strong = s.slot !== null;
+    const sw = strong ? 2 : 1.1, op = strong ? 1 : 0.5;
     let seg = [];
     const flush = () => {
-      if (seg.length > 1) {
-        svg += `<polyline points="${seg.map(p => p.join(',')).join(' ')}" fill="none"
-                 stroke="${c}" stroke-width="${sw}" opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
-      }
+      if (seg.length > 1) svg += `<polyline points="${seg.map(p => p.join(',')).join(' ')}" fill="none"
+        stroke="${c}" stroke-width="${sw}" opacity="${op}" stroke-linecap="round" stroke-linejoin="round"/>`;
       seg = [];
     };
-    s.values.forEach((v, i) => { v ? seg.push([x(i), y(v)]) : flush(); });
+    s.values.forEach((v, i) => { v ? seg.push([X(i), y(v)]) : flush(); });
     flush();
-
     s.values.forEach((v, i) => {
       if (!v) return;
-      svg += `<circle cx="${x(i)}" cy="${y(v)}" r="${s.focus ? 4.5 : 2.5}" fill="${c}" opacity="${op}"
-               stroke="var(--surface-1)" stroke-width="${s.focus ? 2 : 1}"/>`;
+      svg += `<circle cx="${X(i)}" cy="${y(v)}" r="${strong ? 4 : 2.2}" fill="${c}" opacity="${op}"
+               stroke="var(--surface-1)" stroke-width="${strong ? 2 : 1}"/>`;
     });
-
-    // 직접 라벨 — 강조 키워드 + 현재 순위가 있는 키워드만 (라벨이 넘치지 않게)
-    if (!s.focus && !s.values[s.values.length - 1]) return;
-    for (let i = s.values.length - 1; i >= 0; i--) {
-      if (s.values[i]) { ends.push({ y: y(s.values[i]), name: (s.focus ? '★' : '') + s.name, c, rank: s.values[i] }); break; }
-    }
+    // 직접 라벨은 색 있는 키워드 중 오늘 순위가 있는 것만
+    const v = s.values[N - 1];
+    if (strong && v) ends.push({ y: y(v), name: (s.focus ? '★' : '') + s.name, c, rank: v });
   });
-
-  // 직접 라벨 충돌 방지 — 위에서부터 최소 간격 확보
   ends.sort((a, b) => a.y - b.y);
-  const GAP = 15;
-  ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < GAP) e.y = ends[i - 1].y + GAP; });
+  ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < 14) e.y = ends[i - 1].y + 14; });
   ends.forEach(e => {
-    svg += `<text x="${PL + plotW + 10}" y="${e.y + 4}" font-size="11"
-             fill="var(--text-secondary)">
-              <tspan fill="${e.c}">■</tspan> ${esc(e.name)} ${e.rank}위
-            </text>`;
+    svg += `<text x="${PL + plotW + 10}" y="${e.y + 4}" font-size="11" fill="var(--text-secondary)">
+              <tspan fill="${e.c}">■</tspan> ${esc(e.name)} ${e.rank}위</text>`;
   });
+  svg += `<rect id="hit${key}" x="${PL}" y="${PT}" width="${plotW}" height="${plotH}" fill="transparent"
+           style="cursor:crosshair"/></svg>`;
 
-  svg += `<rect id="hit${pi}" x="${PL}" y="${PT}" width="${plotW}" height="${plotH}"
-           fill="transparent" style="cursor:crosshair"/></svg>`;
+  const colored = panel.series.filter(s => s.slot !== null);
+  const grey = panel.series.length - colored.length;
+  const none = panel.kind === 'place' ? '기간 내 5위 밖' : '기간 내 미노출';
+  const legend = colored.map(s => {
+    const empty = !s.values.some(Boolean);
+    return `<span><i class="${empty ? 'hollow' : ''}" style="background:${slotColor(s.slot)};border-color:${slotColor(s.slot)}"></i>
+            ${s.focus ? '<span class="star">★</span>' : ''}${esc(s.name)}${empty ? ` <span class="muted">(${none})</span>` : ''}</span>`;
+  }).join('') + (grey ? `<span><i style="background:var(--text-muted)"></i>그 외 ${grey}개 (마우스를 올리면 보임)</span>` : '');
 
-  const rest = panel.series.filter(s => !s.focus).length;
-  const legend = panel.series.filter(s => s.focus).map(s =>
-    `<span><i style="background:${s.color}"></i><span class="star">★</span>${esc(s.name)}</span>`).join('')
-    + (rest ? `<span><i style="background:var(--text-muted)"></i>그 외 ${rest}개 키워드</span>` : '');
-
-  return `<div class="card">
-            <h3>${esc(panel.title.split(" · ").pop())}</h3>
-            <p>${esc(panel.note)}</p>
-            ${svg}
-            <div class="legend">${legend}</div>
-          </div>`;
+  return `<div class="card"><h4>${esc(panel.title)}</h4><p>${esc(panel.note)}${panel.kind === 'blog'
+            ? ' 1·3·10·30·100위 간격을 넓게 잡아 상위권 변화가 잘 보이게 했습니다.' : ''}</p>
+          ${svg}<div class="legend">${legend}</div></div>`;
 }
 
-// 패널 id(pi)는 전체 기준 인덱스를 유지한다 — 툴팁이 그걸로 찾는다
-CI.forEach((label, ci) => {
-  document.getElementById('charts' + ci).innerHTML = DATA.panels
-    .map((p, pi) => p.center === label ? drawPanel(p, pi) : '').join('');
-});
+/* ---------- 표로 보기 (최근 날짜부터) ---------- */
+function rawTable(panel) {
+  const idx = DATA.dates.map((_, i) => i).reverse();
+  return `<div class="tscroll"><table><caption>${esc(panel.title)}</caption>
+    <thead><tr><th>키워드</th>${idx.map(i => `<th class="num">${md(DATA.dates[i])}</th>`).join('')}</tr></thead>
+    <tbody>${panel.series.map(s => `<tr><td><span class="sw" style="background:${slotColor(s.slot)}"></span>${
+      s.focus ? '<span class="star">★</span> ' : ''}${esc(s.name)}</td>${
+      idx.map(i => `<td class="num">${s.values[i] ? s.values[i] + '위' : '<span class="miss">—</span>'}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div>`;
+}
 
-/* ---------- 호버 툴팁 ---------- */
+document.getElementById('centers').innerHTML = DATA.centers.map((c, ci) => `
+  <section class="center" id="center${ci}" style="${accent(ci)}">
+    <div class="center-head"><h2>${esc(c.label)}</h2>
+      <span>지역 키워드 ${c.counts.local}개${c.counts.needs + c.counts.brand
+        ? ` · 니즈·브랜드 키워드 ${c.counts.needs + c.counts.brand}개 (블로그만)` : ''}</span></div>
+    <h3 class="sec">오늘 요약</h3>${kpiHtml(c)}
+    ${DATA.prev ? `<h3 class="sec">${md(DATA.prev)} 대비 변동</h3>${changesHtml(c)}` : ''}
+    <h3 class="sec">키워드별 순위</h3>${tableHtml(c)}
+    <h3 class="sec">플레이스 경쟁 구도</h3>${boardHtml(c)}
+    <h3 class="sec">추이</h3>
+    <div class="grid">${c.panels.map((p, pi) => drawPanel(p, `${ci}-${pi}`)).join('')}</div>
+    <p class="foot">점선 = 블로그 확인 범위가 넓어진 날. 이날부터 더 깊은 순위가 새로 보이기 시작하므로, 직후의 '새로 잡힘'은 실제 상승이 아닐 수 있습니다.
+      ${DATA.missing.length ? `수집하지 않은 날(${DATA.missing.map(md).join(', ')})은 앞뒤 점을 이어서 그렸습니다.` : ''}</p>
+    <details class="raw"><summary>표로 보기 (날짜별 전체 순위, 최근 날짜부터)</summary>
+      ${c.panels.map(rawTable).join('')}</details>
+  </section>`).join('');
+
+/* ---------- 호버 툴팁 (마우스·터치) ---------- */
 const tip = document.getElementById('tip');
-DATA.panels.forEach((panel, pi) => {
-  const hit = document.getElementById('hit' + pi);
-  const cross = document.getElementById('cross' + pi);
+DATA.centers.forEach((c, ci) => c.panels.forEach((panel, pi) => {
+  const key = `${ci}-${pi}`;
+  const hit = document.getElementById('hit' + key), cross = document.getElementById('cross' + key);
   const svg = hit.ownerSVGElement;
-  const n = DATA.dates.length;
-
-  hit.addEventListener('mousemove', ev => {
+  const show = ev => {
     const box = svg.getBoundingClientRect();
     const sx = (ev.clientX - box.left) / box.width * W;
-    const i = n === 1 ? 0
-      : Math.max(0, Math.min(n - 1, Math.round((sx - PL) / (plotW / (n - 1)))));
-    const px = n === 1 ? PL + plotW / 2 : PL + (i / (n - 1)) * plotW;
-    cross.setAttribute('x1', px); cross.setAttribute('x2', px);
-    cross.setAttribute('opacity', '1');
-
-    tip.innerHTML = `<b>${DATA.dates[i]} · ${esc(panel.title)}</b>` +
-      panel.series.filter(s => s.focus || s.values[i]).map(s => {
-        const v = s.values[i];
-        return `<div><i style="background:${s.color}"></i>${s.focus ? '★' : ''}${esc(s.name)} — ${v ? v + '위' : '미노출'}</div>`;
-      }).join('');
+    let i = 0;
+    DATA.dates.forEach((_, j) => { if (Math.abs(X(j) - sx) < Math.abs(X(i) - sx)) i = j; });
+    cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('opacity', '1');
+    const colored = panel.series.filter(s => s.slot !== null);
+    const others = panel.series.filter(s => s.slot === null && s.values[i]).sort((a, b) => a.values[i] - b.values[i]);
+    const line = s => `<div><i style="background:${slotColor(s.slot)}"></i>${s.focus ? '★' : ''}${esc(s.name)} — ${
+      s.values[i] ? s.values[i] + '위' : (panel.kind === 'place' ? '5위 밖' : '미노출')}</div>`;
+    const cap = 12;
+    tip.innerHTML = `<b>${DATA.dates[i]} · ${esc(panel.title)}</b>` + colored.map(line).join('')
+      + others.slice(0, cap).map(line).join('')
+      + (others.length > cap ? `<div class="muted">외 ${others.length - cap}개 — 표로 보기 참고</div>` : '');
     tip.style.opacity = '1';
     const tw = tip.offsetWidth, th = tip.offsetHeight;
-    tip.style.left = Math.min(ev.clientX + 14, innerWidth - tw - 10) + 'px';
+    tip.style.left = Math.max(8, Math.min(ev.clientX + 14, innerWidth - tw - 10)) + 'px';
     tip.style.top = Math.max(8, ev.clientY - th - 12) + 'px';
-  });
-  hit.addEventListener('mouseleave', () => {
-    tip.style.opacity = '0';
-    cross.setAttribute('opacity', '0');
-  });
-});
-
-/* ---------- 표로 보기 (접근성 릴리프) ---------- */
-const tableHtml = panel => `
-  <table>
-    <caption>${esc(panel.title.split(" · ").pop())}</caption>
-    <thead><tr><th>키워드</th>${DATA.dates.map(d => `<th class="num">${d.slice(5)}</th>`).join('')}</tr></thead>
-    <tbody>${panel.series.map(s => `
-      <tr${s.focus ? ' class="focus"' : ''}>
-        <td><span class="sw" style="background:${s.color}"></span>${star(s.focus)}${esc(s.name)}</td>
-        ${s.values.map(v => `<td class="num">${v === null ? '<span class="miss">—</span>' : v + '위'}</td>`).join('')}
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-CI.forEach((label, ci) => {
-  document.getElementById('tables' + ci).innerHTML =
-    DATA.panels.filter(p => p.center === label).map(tableHtml).join('');
-});
+  };
+  hit.addEventListener('pointermove', show);
+  hit.addEventListener('pointerdown', show);
+  hit.addEventListener('pointerleave', () => { tip.style.opacity = '0'; cross.setAttribute('opacity', '0'); });
+}));
 </script>
 </body>
 </html>

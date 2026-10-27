@@ -39,11 +39,14 @@ jobs:
       - name: 대시보드 생성
         run: python src/build_dashboard.py
 
+      - name: 센터별 보고서 생성
+        run: python src/build_report.py --web
+
       - name: 커밋
         run: |
           git config user.name  "rank-bot"
           git config user.email "rank-bot@users.noreply.github.com"
-          git add data/rankings.csv docs/index.html
+          git add data/rankings.csv data/blog_posts.csv docs/index.html docs/reports
           if git diff --staged --quiet; then
             echo "변경 없음"
           else
