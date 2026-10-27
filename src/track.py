@@ -183,6 +183,10 @@ def main() -> None:
                 rows.append({"date": today, "center": name, "keyword": keyword, **result})
             print(f"   place={place['our_rank'] or '5위밖'}  blog={blog['our_rank'] or '미노출'}")
 
+    # 검색 결과가 하나도 없으면 인증·API 오류다 → 빈 줄을 '미노출'로 기록하지 않고 실패로 끝낸다
+    if rows and all(r["checked_depth"] == 0 for r in rows):
+        sys.exit("모든 검색이 결과 0건 — 인증 정보(HTTP 401 등)를 확인한다. 기록하지 않았다.")
+
     OUT.parent.mkdir(parents=True, exist_ok=True)
     is_new = not OUT.exists()
     with OUT.open("a", newline="", encoding="utf-8") as fh:
