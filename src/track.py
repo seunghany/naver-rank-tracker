@@ -240,12 +240,16 @@ def main() -> None:
 
     for path, fields, data in ((OUT, FIELDS, rows), (OUT_POSTS, POST_FIELDS, post_rows)):
         path.parent.mkdir(parents=True, exist_ok=True)
-        is_new = not path.exists()
-        with path.open("a", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fields)
-            if is_new:
-                writer.writeheader()
-            writer.writerows(data)
+        # 같은 날 다시 돌리면(수동 실행 + 예약 실행) 그날 기록을 새 결과로 바꾼다 — 덧붙이면 하루가 두 번 들어간다
+        keep = []
+        if path.exists():
+            with path.open(newline="", encoding="utf-8") as fh:
+                keep = [r for r in csv.DictReader(fh) if r["date"] != today]
+        # 줄바꿈은 LF로 통일 — git이 저장하는 형식과 같아야 매일 그날 줄만 바뀐다
+        with path.open("w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(keep + data)
         print(f"{len(data)}행 기록 → {path}")
 
 

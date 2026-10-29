@@ -1,0 +1,2 @@
+# 순위 기록은 LF로 고정 — Windows에서 받아도 바뀌지 않게 (track.py도 LF로 쓴다)
+data/*.csv text eol=lf
