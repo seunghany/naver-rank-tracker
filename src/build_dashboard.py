@@ -10,6 +10,8 @@
 - 플레이스 경쟁 구도: 업체별 1위·5위 안 키워드 수와 최근 2주 흐름, 1위가 바뀐 묶음
 - 키워드별 순위 표: ◆ 센터 핵심 · ★ 검색량 상위 · 그 외 지역 · 니즈 · 브랜드, 키워드마다 최근 2주 흐름
 - 추이 차트: 플레이스 · 블로그(지역) · 블로그(니즈·브랜드)
+- 키워드 주석(config keyword_notes): 표에 ※ 표시·각주, 그 키워드가 들어간 1위·10위 안 집계 옆에도 표시
+- 수집 시각(collected_at)·API 총 결과 수(api_total): 기준일 줄과 순위 칸 툴팁 (2026-11-02부터 기록)
 """
 from __future__ import annotations
 
@@ -101,10 +103,16 @@ def build() -> None:
             "title": r.get("our_title", ""),
             "top1": r.get("rank1", ""),
             "top": [r.get(f"rank{i}") or "" for i in range(1, 6)],
+            # API 총 결과 수 — 2026-11-02 전 줄에는 열이 없거나 빈 값
+            "total": to_rank(r.get("api_total")),
         }
         if r["surface"] == "blog" and r["date"] == last:
             depth = max(depth, int(r["checked_depth"] or 0))
     depth = depth or 300
+
+    # 마지막 수집일의 수집 시각 범위 (KST 시:분). 기록이 없던 날은 None
+    stamps = sorted(r["collected_at"] for r in rows if r["date"] == last and r.get("collected_at"))
+    collected = {"from": stamps[0][11:16], "to": stamps[-1][11:16]} if stamps else None
 
     # 블로그 글 단위 기록 — 오늘 처음 검색에 잡힌 글을 찾는다 (없으면 건너뜀)
     posts = list(csv.DictReader(POSTS_PATH.open(encoding="utf-8"))) if POSTS_PATH.exists() else []
@@ -125,6 +133,9 @@ def build() -> None:
         core = [k for k in (c.get("core_keywords") or []) if k in local + needs + brand]
         hist = dates[-HISTORY:]
         our_keys = {norm(a) for a in c.get("place_aliases") or []}
+        # 키워드 주석 — 순위를 읽을 때 알아야 할 사정 (예: 검색 결과가 1~2건뿐이라 1위가 경쟁 없음)
+        note_text = {str(k): str(v) for k, v in (c.get("keyword_notes") or {}).items()
+                     if str(k) in local + needs + brand}
 
         def obs(surface: str, kw: str, d: str | None) -> dict:
             return lookup.get((name, surface, kw), {}).get(d) or {} if d else {}
@@ -138,6 +149,7 @@ def build() -> None:
                 "measured": bool(now),
                 "title": now.get("title", "") if surface == "blog" else "",
                 "otherPost": bool(r and b and now.get("title") != before.get("title")),
+                "total": now.get("total"),
             }
 
         # 키워드별 순위 표 — ◆ 핵심을 맨 위에, 그다음 ★ 검색량 상위, 나머지
@@ -154,7 +166,15 @@ def build() -> None:
                     "blogOnly": kw not in local,
                     "place": cell("place", kw) if kw in local else None,
                     "blog": cell("blog", kw),
+                    "note": None,
                 })
+        # 주석 번호는 표 순서대로 (※1, ※2 …)
+        notes = []
+        for row in table:
+            if row["kw"] in note_text:
+                notes.append({"n": len(notes) + 1, "kw": row["kw"], "text": note_text[row["kw"]],
+                              "total": row["blog"]["total"]})
+                row["note"] = len(notes)
 
         # 오늘 요약 — 날짜별로 계산해 최근 2주 흐름도 같이 보낸다
         core_local = [k for k in core if k in local]
@@ -174,6 +194,17 @@ def build() -> None:
                 "blogFirst": sum(1 for v in blog if v == 1),
                 "blogTop10": sum(1 for v in blog if v and v <= 10),
             }
+
+        # 주석 달린 키워드가 오늘 1위·10위 안 집계에 들어갔으면 이름을 남긴다 — 숫자에서 빼지 않고 옆에 밝힌다
+        def noted_in(kws: list[str], ok) -> list[str]:
+            return [r["kw"] for r in table
+                    if r["kw"] in kws and r["note"] and ok(obs("blog", r["kw"], last).get("rank"))]
+
+        kpi_noted = {
+            "blogFirst": noted_in(local + needs + brand, lambda v: v == 1),
+            "blogTop10": noted_in(local + needs + brand, lambda v: bool(v) and v <= 10),
+            "coreBlogTop10": noted_in(core, lambda v: bool(v) and v <= 10),
+        }
 
         # 변동 — 순위 비율로 정렬해서 2→1위가 45→43위보다 앞에 오게 한다
         up, down, new, lost = [], [], [], []
@@ -283,6 +314,7 @@ def build() -> None:
             "counts": {"local": len(local), "needs": len(needs), "brand": len(brand)},
             "coreCounts": {"local": len(core_local), "all": len(core)},
             "kpi": {"now": kpi(last), "prev": kpi(prev), "hist": [kpi(d) for d in hist]},
+            "kpiNoted": kpi_noted, "notes": notes,
             "table": table,
             "changes": {"up": up, "down": down, "new": new, "lost": lost},
             "newPosts": new_posts, "topChanges": top_changes,
@@ -292,7 +324,7 @@ def build() -> None:
 
     payload = {"dates": dates, "days": days, "last": last, "prev": prev,
                "missing": missing, "marks": depth_marks(rows, dates), "depth": depth,
-               "centers": centers}
+               "collected": collected, "centers": centers}
     html = (TEMPLATE
             .replace("__DATA__", json.dumps(payload, ensure_ascii=False))
             .replace("__UPDATED__", last or "-")

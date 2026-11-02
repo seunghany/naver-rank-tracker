@@ -120,6 +120,9 @@
   .kt td.post { color:var(--text-muted); max-width:340px; overflow:hidden; text-overflow:ellipsis;
                 white-space:nowrap; font-size:.74rem; }
   .kt .delta { font-size:.7rem; margin-left:4px; }
+  /* 키워드 주석 ※ — 표 아래 각주와 짝 */
+  .fn { color:var(--accent); font-size:.66rem; font-weight:650; margin-left:2px; cursor:help; }
+  .fn-ref { white-space:nowrap; }
   @media (max-width:640px){ .kt .post { display:none; } th, td { padding:7px 8px; } }
 
   /* 추이 차트 */
@@ -178,9 +181,11 @@ const md = d => d ? d.slice(5).replace('-', '/') : '';
 const slotColor = slot => slot === null ? 'var(--text-muted)' : `var(--s${slot + 1})`;
 const SURF = { place: '플레이스', blog: '블로그' };
 
+const collected = DATA.collected
+  ? ` (수집 ${DATA.collected.from}${DATA.collected.to !== DATA.collected.from ? '~' + DATA.collected.to : ''} KST)` : '';
 document.getElementById('asof').innerHTML = DATA.prev
-  ? `<b>${DATA.last}</b> 기준 · 변동은 직전 수집일 <b>${DATA.prev}</b>과 비교`
-  : `<b>${DATA.last}</b> 기준 (첫 수집)`;
+  ? `<b>${DATA.last}</b> 기준${collected} · 변동은 직전 수집일 <b>${DATA.prev}</b>과 비교`
+  : `<b>${DATA.last}</b> 기준${collected} (첫 수집)`;
 document.getElementById('depth').textContent = DATA.depth;
 
 /* ---------- 센터별 구역 ---------- */
@@ -209,11 +214,17 @@ function kpiHtml(c) {
     const d = now[k] - before[k];
     return d === 0 ? '변동 없음' : d > 0 ? `<span class="up">▲ ${d}</span>` : `<span class="down">▼ ${-d}</span>`;
   };
+  // 주석 달린 키워드(예: 경쟁 없는 1위)가 이 집계에 들어 있으면 숫자는 그대로 두고 옆에 밝힌다
+  const noted = c.kpiNoted || {}, noteOf = Object.fromEntries(c.notes.map(x => [x.kw, x]));
+  const notedHint = k => (noted[k] || []).length
+    ? `<span class="fn-ref" title="${esc(noted[k].map(kw => `${kw}: ${noteOf[kw].text}`).join(' / '))}">※ ${
+        noted[k].map(esc).join(', ')} 포함</span>` : '';
+  const used = [...new Set(Object.values(noted).flat())];
   const tile = (k, label, total, hint, core) => `<div class="kpi${core ? ' core' : ''}">
       <div class="k">${core ? '<span class="core-mark">◆</span> ' : ''}${label}</div>
       <div class="v">${now[k]}${total ? `<small> / ${total}</small>` : ''}</div>
       ${sparkCount(hist.map(h => h[k]), core ? 'var(--accent)' : 'var(--text-muted)', total || undefined)}
-      <div class="d">${diff(k)}${hint ? ` · ${hint}` : ''}</div></div>`;
+      <div class="d">${[diff(k), hint, notedHint(k)].filter(Boolean).join(' · ')}</div></div>`;
   return `<div class="kpis">
     ${c.coreCounts.local ? tile('corePlaceTop5', '핵심 · 플레이스 5위 안', c.coreCounts.local, '', true) : ''}
     ${c.coreCounts.all ? tile('coreBlogTop10', '핵심 · 블로그 10위 안', c.coreCounts.all, '', true) : ''}
@@ -222,7 +233,8 @@ function kpiHtml(c) {
     ${tile('blogFirst', '블로그 1위', 0, '')}
     ${tile('blogTop10', '블로그 10위 안', 0, '')}
   </div>
-  <p class="foot">작은 선 = 최근 ${hist.length}번 수집의 흐름 (오른쪽 끝이 오늘)</p>`;
+  <p class="foot">작은 선 = 최근 ${hist.length}번 수집의 흐름 (오른쪽 끝이 오늘)${
+    used.map(kw => `<br>※ <b>${esc(kw)}</b>: ${esc(noteOf[kw].text)} — 위 숫자에 포함돼 있습니다`).join('')}</p>`;
 }
 
 /* ---------- 플레이스 경쟁 구도 ---------- */
@@ -357,16 +369,21 @@ function tableHtml(c) {
   c.table.forEach(r => {
     if (r.group !== group) { group = r.group; html += `<tr class="grp"><td colspan="5">${GROUPS[group]}</td></tr>`; }
     const marks = (r.core ? '<span class="core-mark">◆</span>' : '') + (r.focus ? '<span class="star">★</span>' : '');
+    const fn = r.note ? `<sup class="fn" title="${esc(c.notes[r.note - 1].text)}">※${r.note}</sup>` : '';
     html += `<tr class="${r.core || r.focus ? 'focus' : ''}">
-      <td class="kw">${marks ? marks + ' ' : ''}${esc(r.kw)}${r.blogOnly && r.group === 'core' ? ' <span class="tag">블로그만</span>' : ''}</td>
-      <td class="num">${rankCell(r.place, 'place')}</td>
-      <td class="num">${rankCell(r.blog, 'blog')}</td>
+      <td class="kw">${marks ? marks + ' ' : ''}${esc(r.kw)}${fn}${r.blogOnly && r.group === 'core' ? ' <span class="tag">블로그만</span>' : ''}</td>
+      <td class="num"${totalTip(r.place)}>${rankCell(r.place, 'place')}</td>
+      <td class="num"${totalTip(r.blog)}>${rankCell(r.blog, 'blog')}</td>
       <td class="trend">${trendHtml(r.place ? vals.place[r.kw] : null, vals.blog[r.kw] || [])}</td>
       <td class="post" title="${esc(r.blog.title)}">${esc(r.blog.title)}</td></tr>`;
   });
   return html + `</tbody></table></div>
-    <p class="foot">최근 ${HN}번 칸: 위쪽 막대 = 플레이스 5위 안에 든 날(진할수록 상위), 아래 선 = 블로그 순위(위로 갈수록 상위, 끊긴 곳은 미노출)</p>`;
+    <p class="foot">최근 ${HN}번 칸: 위쪽 막대 = 플레이스 5위 안에 든 날(진할수록 상위), 아래 선 = 블로그 순위(위로 갈수록 상위, 끊긴 곳은 미노출)${
+      c.notes.map(x => `<br><span class="fn">※${x.n}</span> <b>${esc(x.kw)}</b>: ${esc(x.text)}${
+        x.total != null ? ` <span class="muted">(오늘 블로그 검색 결과 ${x.total.toLocaleString('ko-KR')}건)</span>` : ''}`).join('')}</p>`;
 }
+/* 순위 칸 툴팁 — 그날 검색 API가 알려 준 총 결과 수 (2026-11-02부터 기록) */
+const totalTip = o => o && o.total != null ? ` title="검색 결과 ${o.total.toLocaleString('ko-KR')}건"` : '';
 
 /* ---------- SVG 라인 차트 ---------- */
 const W = 660, H = 256, PL = 46, PR = 122, PT = 20, PB = 40;

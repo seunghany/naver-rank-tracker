@@ -61,6 +61,8 @@ Settings → Secrets and variables → Actions → New repository secret
 
 **반드시 바꿔야 하는 값**은 `blog_ids` — `blog.naver.com/<여기>` 의 아이디다.
 `place_aliases`는 네이버 지역검색에 나오는 업체명과 맞춰야 우리 업체로 인식된다.
+`keyword_notes`(선택)는 순위를 읽을 때 알아야 할 사정을 키워드별로 적는다 — 대시보드 키워드 표에
+※ 표시와 각주로 나오고, 그 키워드가 '블로그 1위'·'10위 안' 집계에 들어가면 집계 옆에도 밝힌다.
 
 ### 5. GitHub Pages 켜기
 
@@ -95,6 +97,12 @@ python src/build_dashboard.py  # docs/index.html 생성
 | `our_title` | 잡힌 항목 제목 |
 | `rank1~5` | 그날 1~5위 (경쟁사 추적용) |
 | `checked_depth` | 어디까지 확인했는지 (블로그는 서로 다른 글 수) |
+| `collected_at` | 수집 시각, KST ISO 8601 초 단위 (예: `2026-11-02T09:03:12+09:00`) |
+| `api_total` | 검색 API 응답의 `total`(총 결과 수). 블로그는 첫 페이지 요청 값, 플레이스는 지역검색 값 |
+
+`collected_at`·`api_total`은 2026-11-02에 끝에 덧붙인 열이라 그 전 줄은 빈 값이다.
+API가 돌려주는 결과 범위가 바뀌면(2026-10-14처럼) 순위 숫자를 그 전후로 비교할 수 없는데,
+`api_total`이 같은 키워드에서 하루 만에 크게 바뀌면 그날을 경계로 보면 된다.
 
 한 줄이 하나의 관측이라 그대로 pandas/엑셀로 넘길 수 있다.
 니즈·브랜드 키워드는 지역명이 없어 블로그만 기록한다.

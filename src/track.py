@@ -12,6 +12,10 @@
 블로그 API는 2페이지부터 앞 페이지의 글을 다시 섞어 준다 (2026-10-02 확인: 100개 중
 새 글은 30개 안팎). 그래서 순위는 '받은 순서'가 아니라 '서로 다른 글 중 몇 번째'로 세고,
 checked_depth 도 서로 다른 글 수로 적는다. API 순위는 네이버 앱 화면 순위와 다를 수 있다.
+
+줄마다 수집 시각(collected_at, KST)과 API가 알려 준 총 결과 수(api_total, 첫 요청의 total)도
+남긴다 (2026-11-02 추가, 그 전 줄은 빈 값). 2026-10-14처럼 API가 돌려주는 결과 범위가 바뀌면
+순위 숫자를 그 전후로 비교할 수 없는데, 이 두 값이 있으면 바뀐 날을 그날 알아챌 수 있다.
 """
 from __future__ import annotations
 
@@ -45,6 +49,8 @@ TAG_RE = re.compile(r"<[^>]+>")
 FIELDS = [
     "date", "center", "keyword", "surface", "our_rank", "our_title",
     "rank1", "rank2", "rank3", "rank4", "rank5", "checked_depth",
+    # 2026-11-02 추가 — 끝에 덧붙여 옛 줄과 호환 (옛 줄은 빈 값으로 다시 쓰인다)
+    "collected_at", "api_total",
 ]
 POST_FIELDS = ["date", "center", "keyword", "rank", "title", "link", "postdate"]
 TOPN = 5                  # 상위 몇 위까지 업체명을 기록할지 (지역검색 API 상한과 동일)
@@ -98,6 +104,19 @@ def norm(text: str) -> str:
     return re.sub(r"[\s\-_.]", "", clean(text)).lower()
 
 
+def now_kst() -> str:
+    """수집 시각 — KST ISO 8601, 초 단위 (예: 2026-11-02T09:03:12+09:00)."""
+    return datetime.now(KST).isoformat(timespec="seconds")
+
+
+def total_of(data: dict | None) -> int | str:
+    """검색 API 응답의 total(총 결과 수). 응답이 없거나 숫자가 아니면 빈 값."""
+    try:
+        return int((data or {})["total"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+
+
 def get(url: str, params: dict, hdrs: dict) -> dict | None:
     for attempt in range(3):
         try:
@@ -121,6 +140,7 @@ def get(url: str, params: dict, hdrs: dict) -> dict | None:
 def track_place(keyword: str, aliases: list[str], hdrs: dict, url: str) -> dict:
     """지역검색 상위 5위 확인. API가 display 5까지만 주므로 그 이상은 알 수 없다."""
     # display 범위는 1~5 (HUB 문서 기준). 그 밖의 순위는 이 API로 알 수 없다.
+    collected_at = now_kst()
     data = get(url, {"query": keyword, "display": 5, "sort": "random"}, hdrs)
     items = (data or {}).get("items", [])
     keys = {norm(a) for a in aliases}
@@ -138,6 +158,8 @@ def track_place(keyword: str, aliases: list[str], hdrs: dict, url: str) -> dict:
         "our_title": our_title,
         **{f"rank{i}": top[i - 1] for i in range(1, TOPN + 1)},
         "checked_depth": len(items),
+        "collected_at": collected_at,
+        "api_total": total_of(data),   # 지역검색 응답의 total
     }
 
 
@@ -156,12 +178,15 @@ def track_blog(keyword: str, blog_ids: list[str], hdrs: dict, url: str,
     seen: set[str] = set()
     top: list[str] = []
     ours: list[dict] = []
+    collected_at, total = now_kst(), ""
     for page in range(pages):
         start = page * page_size + 1
         if start > 1000:      # start 상한 1000 (HUB 문서 기준)
             break
         data = get(url, {"query": keyword, "display": page_size,
                          "start": start, "sort": "sim"}, hdrs)
+        if page == 0:
+            total = total_of(data)   # 첫 요청의 total만 쓴다 (뒤 페이지 값은 기록하지 않는다)
         if not data:
             break  # 400(상한 초과) 또는 오류 → 여기까지만 확인한 것으로 처리
         items = data.get("items", [])
@@ -191,6 +216,8 @@ def track_blog(keyword: str, blog_ids: list[str], hdrs: dict, url: str,
         "our_title": best["title"] if best else "",
         **{f"rank{i}": top[i - 1] for i in range(1, TOPN + 1)},
         "checked_depth": len(seen),
+        "collected_at": collected_at,
+        "api_total": total,
     }, ours
 
 
